@@ -27,8 +27,10 @@ export interface PedidoRow {
   distancia_km: number | null;
   observaciones: string | null;
   motivo_rechazo: string | null;
+  ruta_calculada: any | null;
   created_at: Date;
   updated_at: Date;
+  geom_entrega?: any;
   cliente_razon_social?: string | null;
   estado_nombre?: string | null;
   zona_nombre?: string | null;

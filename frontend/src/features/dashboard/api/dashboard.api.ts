@@ -14,3 +14,17 @@ export const getDashboardApi = async (params?: DashboardQueryParams): Promise<Da
 
   return data;
 };
+
+/**
+ * Refresca las vistas materializadas del dashboard
+ * POST /api/reportes/refresh
+ */
+export const refreshDashboardViewsApi = async (): Promise<{
+  message: string;
+  refreshed: string[];
+  errors: Array<{ view: string; error: string }>;
+  duration_ms: number;
+}> => {
+  const { data } = await api.post('/reportes/refresh');
+  return data;
+};

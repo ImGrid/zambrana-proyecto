@@ -20,28 +20,28 @@ export const ClientesStatsGrid = () => {
       value: stats.total_clientes,
       icon: <UserGroupIcon className="h-6 w-6" />,
       subtitle: 'En sistema',
-      colorClass: 'text-orange-500'
+      colorClass: 'text-coral-500'
     },
     {
       title: 'Activos del Mes',
       value: stats.clientes_activos_mes,
       icon: <UsersIcon className="h-6 w-6" />,
       subtitle: 'Con pedidos este mes',
-      colorClass: 'text-green-500'
+      colorClass: 'text-success-500'
     },
     {
       title: 'Nuevos del Mes',
       value: stats.clientes_nuevos_mes,
       icon: <UserPlusIcon className="h-6 w-6" />,
       subtitle: 'Registrados este mes',
-      colorClass: 'text-blue-500'
+      colorClass: 'text-info-500'
     },
     {
       title: 'Inactivos (90d)',
       value: stats.clientes_inactivos_90dias,
       icon: <ExclamationTriangleIcon className="h-6 w-6" />,
       subtitle: 'Sin actividad',
-      colorClass: stats.clientes_inactivos_90dias > 0 ? 'text-yellow-500' : 'text-green-500'
+      colorClass: stats.clientes_inactivos_90dias > 0 ? 'text-arena-500' : 'text-success-500'
     }
   ];
 

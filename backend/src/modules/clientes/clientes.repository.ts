@@ -8,10 +8,6 @@ export interface ClienteRow {
   razon_social: string;
   nit: string | null;
   telefono: string | null;
-  direccion: string | null;
-  latitud: number | null;
-  longitud: number | null;
-  referencia_ubicacion: string | null;
   created_at: Date;
   updated_at: Date;
   usuario_email?: string | null;
@@ -23,7 +19,6 @@ export interface ClienteListItem {
   razon_social: string;
   nit: string | null;
   telefono: string | null;
-  direccion: string | null;
   tipo_cliente_nombre: string;
 }
 
@@ -38,7 +33,6 @@ export async function findAllClientes(
       c.razon_social,
       c.nit,
       c.telefono,
-      c.direccion,
       tc.nombre as tipo_cliente_nombre
     FROM clientes c
     INNER JOIN tipo_cliente tc ON c.tipo_cliente_id = tc.id
@@ -53,7 +47,6 @@ export async function findAllClientes(
     razon_social: row.razon_social,
     nit: row.nit,
     telefono: row.telefono,
-    direccion: row.direccion,
     tipo_cliente_nombre: row.tipo_cliente_nombre || ''
   }));
 }
@@ -87,10 +80,6 @@ export async function findClienteById(id: number): Promise<ClienteRow | null> {
       c.razon_social,
       c.nit,
       c.telefono,
-      c.direccion,
-      c.latitud,
-      c.longitud,
-      c.referencia_ubicacion,
       c.created_at,
       c.updated_at,
       u.email as usuario_email,
@@ -124,10 +113,6 @@ export async function findClienteByNIT(nit: string): Promise<ClienteRow | null> 
       c.razon_social,
       c.nit,
       c.telefono,
-      c.direccion,
-      c.latitud,
-      c.longitud,
-      c.referencia_ubicacion,
       c.created_at,
       c.updated_at,
       u.email as usuario_email,
@@ -161,10 +146,6 @@ export async function findClienteByUsuarioId(usuarioId: number): Promise<Cliente
       c.razon_social,
       c.nit,
       c.telefono,
-      c.direccion,
-      c.latitud,
-      c.longitud,
-      c.referencia_ubicacion,
       c.created_at,
       c.updated_at,
       u.email as usuario_email,
@@ -194,24 +175,16 @@ export async function createCliente(data: {
   tipo_cliente_id: number;
   nit?: string;
   telefono?: string;
-  direccion?: string;
-  latitud?: number;
-  longitud?: number;
-  referencia_ubicacion?: string;
 }): Promise<number> {
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO clientes (razon_social, tipo_cliente_id, nit, telefono, direccion, latitud, longitud, referencia_ubicacion)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO clientes (razon_social, tipo_cliente_id, nit, telefono)
+     VALUES ($1, $2, $3, $4)
      RETURNING id`,
     [
       data.razon_social,
       data.tipo_cliente_id,
       data.nit || null,
-      data.telefono || null,
-      data.direccion || null,
-      data.latitud || null,
-      data.longitud || null,
-      data.referencia_ubicacion || null
+      data.telefono || null
     ]
   );
 
@@ -230,10 +203,6 @@ export async function updateCliente(
     razon_social?: string;
     nit?: string;
     telefono?: string;
-    direccion?: string;
-    latitud?: number;
-    longitud?: number;
-    referencia_ubicacion?: string;
     tipo_cliente_id?: number;
   }
 ): Promise<boolean> {
@@ -252,22 +221,6 @@ export async function updateCliente(
   if (data.telefono !== undefined) {
     fields.push(`telefono = $${paramCounter++}`);
     values.push(data.telefono);
-  }
-  if (data.direccion !== undefined) {
-    fields.push(`direccion = $${paramCounter++}`);
-    values.push(data.direccion);
-  }
-  if (data.latitud !== undefined) {
-    fields.push(`latitud = $${paramCounter++}`);
-    values.push(data.latitud);
-  }
-  if (data.longitud !== undefined) {
-    fields.push(`longitud = $${paramCounter++}`);
-    values.push(data.longitud);
-  }
-  if (data.referencia_ubicacion !== undefined) {
-    fields.push(`referencia_ubicacion = $${paramCounter++}`);
-    values.push(data.referencia_ubicacion);
   }
   if (data.tipo_cliente_id !== undefined) {
     fields.push(`tipo_cliente_id = $${paramCounter++}`);

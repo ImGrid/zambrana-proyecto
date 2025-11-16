@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Truck, Package, ShoppingCart, User, LogOut } from 'lucide-react';
+import { Package, ShoppingCart, User, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { ROUTES } from '@/config/routes.config';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ const clienteNavItems = [
     label: 'Mis Pedidos',
   },
   {
-    to: '/cliente/perfil',
+    to: ROUTES.PERFIL_CLIENTE.path,
     icon: User,
     label: 'Mi Perfil',
   },
@@ -33,15 +33,19 @@ export function ClienteLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to={ROUTES.CATALOGO.path} className="flex items-center gap-2">
-              <Truck className="h-8 w-8 text-orange-600" />
-              <span className="text-xl font-bold text-gray-900">
-                Agregados Zambrana
-              </span>
+    <div className="min-h-screen bg-cemento-50">
+      <header className="bg-white border-b border-piedra-200 sticky top-0 z-50">
+        <div className="container mx-auto px-8 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-between h-20">
+            <Link to={ROUTES.CATALOGO.path} className="flex items-center">
+              <picture>
+                <source srcSet="/logo-navbar.webp" type="image/webp" />
+                <img
+                  src="/logo_origin.png"
+                  alt="Agregados Zambrana"
+                  className="h-16 w-auto"
+                />
+              </picture>
             </Link>
 
             <nav className="hidden md:flex items-center gap-6">
@@ -56,8 +60,8 @@ export function ClienteLayout() {
                     className={cn(
                       'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
                       isActive
-                        ? 'bg-orange-50 text-orange-600 font-medium'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'bg-coral-50 text-coral-600 font-medium'
+                        : 'text-cemento-600 hover:text-cemento-900 hover:bg-cemento-50'
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -71,14 +75,14 @@ export function ClienteLayout() {
               {user && (
                 <div className="hidden md:flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-cemento-900">
                       {user.nombre || user.email}
                     </p>
-                    <p className="text-xs text-gray-500">Cliente</p>
+                    <p className="text-xs text-cemento-500">Cliente</p>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="p-2 text-cemento-500 hover:text-cemento-700 transition-colors"
                     title="Cerrar sesión"
                   >
                     <LogOut className="h-5 w-5" />
@@ -88,7 +92,7 @@ export function ClienteLayout() {
 
               <button
                 onClick={handleLogout}
-                className="md:hidden text-sm text-gray-600 hover:text-gray-900"
+                className="md:hidden text-sm text-cemento-600 hover:text-cemento-900"
               >
                 Salir
               </button>
@@ -101,7 +105,7 @@ export function ClienteLayout() {
         <Outlet />
       </main>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-piedra-200 z-40">
         <div className="flex items-center justify-around py-2">
           {clienteNavItems.map((item) => {
             const Icon = item.icon;
@@ -114,8 +118,8 @@ export function ClienteLayout() {
                 className={cn(
                   'flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors',
                   isActive
-                    ? 'text-orange-600'
-                    : 'text-gray-500'
+                    ? 'text-coral-600'
+                    : 'text-cemento-500'
                 )}
               >
                 <Icon className="h-6 w-6" />

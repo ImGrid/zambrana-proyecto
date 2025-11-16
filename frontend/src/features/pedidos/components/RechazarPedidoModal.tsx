@@ -77,40 +77,40 @@ export function RechazarPedidoModal({ open, onClose, pedido }: RechazarPedidoMod
       }
     >
       <form className="space-y-4">
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+        <div className="bg-cemento-50 rounded-lg p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Cliente:</span>
-            <span className="font-medium text-gray-900">{pedido.cliente_razon_social}</span>
+            <span className="text-cemento-600">Cliente:</span>
+            <span className="font-medium text-cemento-900">{pedido.cliente_razon_social}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Monto total:</span>
-            <span className="font-medium text-gray-900">Bs. {pedido.monto_total.toFixed(2)}</span>
+            <span className="text-cemento-600">Monto total:</span>
+            <span className="font-medium text-cemento-900">Bs. {pedido.monto_total.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total m³:</span>
-            <span className="font-medium text-gray-900">{pedido.total_m3.toFixed(2)} m³</span>
+            <span className="text-cemento-600">Total m³:</span>
+            <span className="font-medium text-cemento-900">{pedido.total_m3.toFixed(2)} m³</span>
           </div>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-sm text-yellow-800">
+        <div className="bg-arena-50 border border-arena-200 rounded-lg p-3">
+          <p className="text-sm text-arena-800">
             Esta acción cambiará el estado del pedido a CANCELADO y no se podrá revertir.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Motivo del rechazo <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-cemento-700 mb-1">
+            Motivo del rechazo <span className="text-error-500">*</span>
           </label>
           <textarea
             {...register('motivo')}
             rows={4}
             disabled={isPending}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-piedra-300 rounded-md shadow-sm focus:ring-coral-500 focus:border-coral-500 disabled:bg-cemento-100 disabled:cursor-not-allowed"
             placeholder="Explique detalladamente el motivo del rechazo..."
           />
           {errors.motivo && (
-            <p className="mt-1 text-sm text-red-600">{errors.motivo.message}</p>
+            <p className="mt-1 text-sm text-error-600">{errors.motivo.message}</p>
           )}
         </div>
       </form>

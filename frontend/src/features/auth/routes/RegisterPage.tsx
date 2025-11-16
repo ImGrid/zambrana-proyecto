@@ -55,17 +55,17 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-orange-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <div className="bg-gradient-to-br from-arena-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ minHeight: 'calc(100vh - 64px)' }}>
       <div className="max-w-md w-full">
         <Card variant="elevated">
           <CardHeader className="text-center border-b-0 pb-4">
-            <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserPlus className="h-8 w-8 text-orange-600" />
+            <div className="bg-coral-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="h-8 w-8 text-coral-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-cemento-900">
               Crear Cuenta
             </h2>
-            <p className="text-gray-600 mt-2">
+            <p className="text-cemento-600 mt-2">
               Regístrate para empezar a hacer tus pedidos
             </p>
           </CardHeader>
@@ -95,9 +95,9 @@ export function RegisterPage() {
                 {...registerField('tipo_cliente_id')}
                 error={errors.tipo_cliente_id?.message}
                 options={[
-                  { value: 1, label: 'Minorista' },
-                  { value: 2, label: 'Mayorista' },
-                  { value: 3, label: 'Empresarial' },
+                  { value: 1, label: 'Independiente' },
+                  { value: 2, label: 'Hormigonera' },
+                  { value: 3, label: 'Constructora' },
                 ]}
                 required
               />
@@ -122,7 +122,7 @@ export function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-[38px] text-cemento-500 hover:text-cemento-700"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -144,7 +144,7 @@ export function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-[38px] text-cemento-500 hover:text-cemento-700"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -166,10 +166,10 @@ export function RegisterPage() {
               </div>
 
               <div className="text-center text-sm">
-                <span className="text-gray-600">¿Ya tienes cuenta? </span>
+                <span className="text-cemento-600">¿Ya tienes cuenta? </span>
                 <Link
                   to="/login"
-                  className="font-medium text-orange-600 hover:text-orange-700"
+                  className="font-medium text-coral-600 hover:text-coral-700"
                 >
                   Inicia sesión aquí
                 </Link>

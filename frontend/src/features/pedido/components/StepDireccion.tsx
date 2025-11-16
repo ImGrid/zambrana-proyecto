@@ -1,5 +1,6 @@
 import { MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { MapaPicker } from './MapaPicker';
 
 interface DireccionData {
   direccion_entrega: string;
@@ -23,10 +24,10 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-xl font-semibold text-cemento-900 mb-4">
           Dirección de entrega
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-cemento-600 mb-4">
           Proporciona la dirección donde deseas recibir los materiales
         </p>
       </div>
@@ -34,8 +35,8 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
       <div className="grid grid-cols-1 gap-6">
         {/* Dirección */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Dirección completa <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-cemento-700 mb-2">
+            Dirección completa <span className="text-error-500">*</span>
           </label>
           <Input
             type="text"
@@ -44,12 +45,12 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
             onChange={(e) => handleChange('direccion_entrega', e.target.value)}
             className="w-full"
           />
-          <p className="text-xs text-gray-500 mt-1">Mínimo 10 caracteres</p>
+          <p className="text-xs text-cemento-500 mt-1">Mínimo 10 caracteres</p>
         </div>
 
         {/* Referencia */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-cemento-700 mb-2">
             Referencia de ubicación
           </label>
           <Input
@@ -61,48 +62,24 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
           />
         </div>
 
-        {/* Coordenadas */}
+        {/* Mapa para seleccionar ubicación */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-cemento-700 mb-3">
             <MapPin className="h-4 w-4 inline mr-1" />
-            Coordenadas GPS
+            Ubicación de entrega <span className="text-error-500">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                Latitud <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="number"
-                step="0.0001"
-                placeholder="-17.3935"
-                value={data.latitud_entrega}
-                onChange={(e) => handleChange('latitud_entrega', Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">
-                Longitud <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="number"
-                step="0.0001"
-                placeholder="-66.1570"
-                value={data.longitud_entrega}
-                onChange={(e) => handleChange('longitud_entrega', Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Puedes obtener las coordenadas desde Google Maps
-          </p>
+          <MapaPicker
+            latitud={data.latitud_entrega}
+            longitud={data.longitud_entrega}
+            onLocationChange={(lat, lng) => {
+              onChange({ ...data, latitud_entrega: lat, longitud_entrega: lng });
+            }}
+          />
         </div>
 
         {/* Fecha solicitada */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-cemento-700 mb-2">
             Fecha de entrega solicitada
           </label>
           <Input
@@ -112,12 +89,12 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
             className="w-full"
             min={new Date().toISOString().split('T')[0]}
           />
-          <p className="text-xs text-gray-500 mt-1">Opcional - Fecha preferida para la entrega</p>
+          <p className="text-xs text-cemento-500 mt-1">Opcional - Fecha preferida para la entrega</p>
         </div>
 
         {/* Observaciones */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-cemento-700 mb-2">
             Observaciones adicionales
           </label>
           <textarea
@@ -125,7 +102,7 @@ export function StepDireccion({ data, onChange }: StepDireccionProps) {
             value={data.observaciones}
             onChange={(e) => handleChange('observaciones', e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-piedra-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500 focus:border-transparent"
           />
         </div>
       </div>

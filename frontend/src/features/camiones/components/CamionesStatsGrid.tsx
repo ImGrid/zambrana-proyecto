@@ -20,28 +20,28 @@ export const CamionesStatsGrid = () => {
       value: stats.total_camiones,
       icon: <TruckIcon className="h-6 w-6" />,
       subtitle: `${stats.camiones_activos} activos`,
-      colorClass: 'text-orange-500'
+      colorClass: 'text-coral-500'
     },
     {
       title: 'Disponibles',
       value: stats.camiones_disponibles,
       icon: <CheckCircleIcon className="h-6 w-6" />,
       subtitle: 'Listos para asignar',
-      colorClass: 'text-green-500'
+      colorClass: 'text-success-500'
     },
     {
       title: 'En Mantenimiento',
       value: stats.camiones_en_mantenimiento,
       icon: <WrenchScrewdriverIcon className="h-6 w-6" />,
       subtitle: 'Fuera de servicio',
-      colorClass: 'text-yellow-500'
+      colorClass: 'text-arena-500'
     },
     {
       title: 'Capacidad Total',
       value: `${stats.capacidad_total_m3} m³`,
       icon: <CubeIcon className="h-6 w-6" />,
       subtitle: 'Flota activa',
-      colorClass: 'text-blue-500'
+      colorClass: 'text-info-500'
     }
   ];
 

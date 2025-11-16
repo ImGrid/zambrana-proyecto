@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Spinner } from './Spinner';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'error' | 'warning' | 'success' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'success' | 'danger' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ComponentType<{ className?: string }>;
@@ -33,17 +33,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
           // Variant styles
           {
-            'bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500':
+            'bg-coral-500 text-white hover:bg-coral-600 focus:ring-coral-500':
               variant === 'primary',
-            'bg-gray-200 text-gray-700 hover:bg-gray-300 focus:ring-gray-500':
+            'bg-cemento-100 text-cemento-700 hover:bg-cemento-200 focus:ring-cemento-500':
               variant === 'secondary',
-            'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500':
-              variant === 'danger' || variant === 'error',
-            'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500':
-              variant === 'warning',
-            'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500':
+            'border-2 border-piedra-300 bg-white text-cemento-700 hover:bg-cemento-50 focus:ring-cemento-500':
+              variant === 'outline',
+            'text-cemento-700 hover:bg-cemento-100 focus:ring-cemento-500':
+              variant === 'ghost',
+            'bg-success-500 text-white hover:bg-success-600 focus:ring-success-500':
               variant === 'success',
-            'text-gray-700 hover:bg-gray-100 focus:ring-gray-500': variant === 'ghost',
+            'bg-error-500 text-white hover:bg-error-600 focus:ring-error-500':
+              variant === 'danger',
+            'bg-arena-500 text-white hover:bg-arena-600 focus:ring-arena-500':
+              variant === 'warning',
           },
           // Size styles
           {

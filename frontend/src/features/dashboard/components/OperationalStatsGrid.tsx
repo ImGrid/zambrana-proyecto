@@ -39,13 +39,13 @@ export const OperationalStatsGrid = ({ dias = 30 }: OperationalStatsGridProps) =
   const capacidadCamiones = (statsCamiones.camiones_disponibles / statsCamiones.total_camiones) * 100;
   const capacidadConductores = (statsConductores.conductores_activos / statsConductores.total_conductores) * 100;
   const capacidadMinima = Math.min(capacidadCamiones, capacidadConductores);
-  const capacidadColor = capacidadMinima >= 70 ? 'text-green-500' : capacidadMinima >= 50 ? 'text-yellow-500' : 'text-red-500';
+  const capacidadColor = capacidadMinima >= 70 ? 'text-success-500' : capacidadMinima >= 50 ? 'text-arena-500' : 'text-error-500';
 
   // Alertas Críticas: rojo si hay problemas, verde si todo ok
   const stockBajo = statsMateriales.stock_critico + statsMateriales.stock_bajo;
   const licenciasProblema = statsConductores.licencias_vencidas + statsConductores.licencias_por_vencer_30dias;
   const tieneAlertas = stockBajo > 0 || licenciasProblema > 0;
-  const alertasColor = tieneAlertas ? 'text-red-500' : 'text-green-500';
+  const alertasColor = tieneAlertas ? 'text-error-500' : 'text-success-500';
   const alertasTexto = tieneAlertas
     ? `${stockBajo} stock bajo, ${licenciasProblema} licencias`
     : 'Todo en orden';
@@ -59,7 +59,7 @@ export const OperationalStatsGrid = ({ dias = 30 }: OperationalStatsGridProps) =
     : formatCurrency(0);
 
   // Pedidos Pendientes: naranja si >5, verde si <=5
-  const pedidosPendientesColor = statsPedidos.pedidos_pendientes > 5 ? 'text-orange-500' : 'text-green-500';
+  const pedidosPendientesColor = statsPedidos.pedidos_pendientes > 5 ? 'text-coral-500' : 'text-success-500';
 
   const metrics: StatMetric[] = [
     {
@@ -81,7 +81,7 @@ export const OperationalStatsGrid = ({ dias = 30 }: OperationalStatsGridProps) =
       value: clienteTop,
       icon: <StarIcon className="h-6 w-6" />,
       subtitle: clienteTopMonto,
-      colorClass: 'text-purple-500'
+      colorClass: 'text-tierra-500'
     },
     {
       title: 'Pedidos Pendientes',

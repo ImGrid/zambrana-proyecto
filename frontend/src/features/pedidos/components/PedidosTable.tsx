@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 import type { PedidoListItem } from '../types/pedidos.types';
-import { ESTADO_BADGE_VARIANTS } from '../types/pedidos.types';
+import { ESTADO_BADGE_VARIANTS, EstadoPedido } from '../types/pedidos.types';
 
 interface PedidosTableProps {
   pedidos: PedidoListItem[];
@@ -16,13 +16,16 @@ interface PedidosTableProps {
 
 export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRechazar }: PedidosTableProps) => {
   const getEstadoBadgeVariant = (estadoNombre: string) => {
-    const estado = estadoNombre.toLowerCase();
-    if (estado.includes('pendiente')) return ESTADO_BADGE_VARIANTS[1];
-    if (estado.includes('confirmado')) return ESTADO_BADGE_VARIANTS[2];
-    if (estado.includes('ruta')) return ESTADO_BADGE_VARIANTS[3];
-    if (estado.includes('entregado')) return ESTADO_BADGE_VARIANTS[4];
-    if (estado.includes('cancelado')) return ESTADO_BADGE_VARIANTS[5];
-    if (estado.includes('rechazado')) return ESTADO_BADGE_VARIANTS[6];
+    const estado = estadoNombre.toUpperCase();
+    if (estado.includes('PENDIENTE')) return ESTADO_BADGE_VARIANTS[EstadoPedido.PENDIENTE];
+    if (estado.includes('CONFIRMADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.CONFIRMADO];
+    if (estado.includes('CAMINO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.EN_CAMINO];
+    if (estado.includes('DESVIADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.DESVIADO];
+    if (estado.includes('ATASCADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.ATASCADO];
+    if (estado.includes('RECHAZADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.RECHAZADO_CLIENTE];
+    if (estado.includes('ENTREGADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.ENTREGADO];
+    if (estado.includes('CANCELADO')) return ESTADO_BADGE_VARIANTS[EstadoPedido.CANCELADO];
+    if (estado.includes('MULTIPLE')) return ESTADO_BADGE_VARIANTS[EstadoPedido.EN_PROCESO_MULTIPLE];
     return 'default';
   };
 
@@ -30,7 +33,7 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     {
       header: 'Código',
       accessor: (row) => (
-        <span className="font-mono text-xs text-gray-700">
+        <span className="font-mono text-xs text-cemento-700">
           {row.codigo_seguimiento}
         </span>
       ),
@@ -50,7 +53,7 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     {
       header: 'Fecha',
       accessor: (row) => (
-        <span className="text-gray-900 text-sm whitespace-nowrap">
+        <span className="text-cemento-900 text-sm whitespace-nowrap">
           {new Date(row.fecha_pedido).toLocaleDateString('es-BO', {
             day: '2-digit',
             month: '2-digit',
@@ -62,7 +65,7 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     {
       header: 'Monto',
       accessor: (row) => (
-        <span className="text-gray-900 font-bold whitespace-nowrap">
+        <span className="text-cemento-900 font-bold whitespace-nowrap">
           Bs. {row.monto_total.toFixed(2)}
         </span>
       ),

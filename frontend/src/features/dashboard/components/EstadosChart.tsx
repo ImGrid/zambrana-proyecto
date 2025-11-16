@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { DashboardMetrica } from '../types/dashboard.types';
+import { CHART_COLORS, GRID_STYLE, AXIS_STYLE, TOOLTIP_STYLE } from '@/config/chart-colors';
 
 interface EstadosChartProps {
   metricas: DashboardMetrica[];
@@ -17,35 +18,30 @@ export const EstadosChart = ({ metricas }: EstadosChartProps) => {
   );
 
   const data = [
-    { estado: 'Entregados', cantidad: totales.entregados, fill: '#10b981' },
-    { estado: 'En Proceso', cantidad: totales.en_proceso, fill: '#3b82f6' },
-    { estado: 'Cancelados', cantidad: totales.cancelados, fill: '#ef4444' }
+    { estado: 'Entregados', cantidad: totales.entregados, fill: CHART_COLORS.success },
+    { estado: 'En Proceso', cantidad: totales.en_proceso, fill: CHART_COLORS.info },
+    { estado: 'Cancelados', cantidad: totales.cancelados, fill: CHART_COLORS.error }
   ];
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-lg border border-piedra-200 p-6">
+      <h3 className="text-lg font-semibold text-cemento-900 mb-4">
         Distribución por Estado
       </h3>
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid {...GRID_STYLE} />
           <XAxis
             dataKey="estado"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#e5e7eb' }}
+            tick={AXIS_STYLE.tick}
+            tickLine={AXIS_STYLE.tickLine}
           />
           <YAxis
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#e5e7eb' }}
+            tick={AXIS_STYLE.tick}
+            tickLine={AXIS_STYLE.tickLine}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem'
-            }}
+            contentStyle={TOOLTIP_STYLE}
             cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
           />
           <Legend
@@ -54,7 +50,7 @@ export const EstadosChart = ({ metricas }: EstadosChartProps) => {
           />
           <Bar
             dataKey="cantidad"
-            fill="#FF6B35"
+            fill={CHART_COLORS.primary}
             radius={[8, 8, 0, 0]}
             name="Pedidos"
           />

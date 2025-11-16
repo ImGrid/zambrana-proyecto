@@ -79,3 +79,18 @@ export interface ConductorLicenciaVencer {
 export interface LicenciasVencerResponse {
   conductores: ConductorLicenciaVencer[];
 }
+
+// Categorías de licencia disponibles (según base de datos)
+export enum CategoriaLicencia {
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  PROFESIONAL = 'Profesional'
+}
+
+export const CATEGORIA_LICENCIA_LABELS: Record<string, string> = {
+  [CategoriaLicencia.A]: 'Categoría A',
+  [CategoriaLicencia.B]: 'Categoría B',
+  [CategoriaLicencia.C]: 'Categoría C',
+  [CategoriaLicencia.PROFESIONAL]: 'Profesional'
+};

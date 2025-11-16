@@ -15,7 +15,7 @@ import {
   pedidoSuccessResponseSchema,
   errorResponseSchema,
   getEstadisticasQuerySchema,
-  estadisticasPedidosResponseSchema
+  estadisticasPedidosResponseSchema,
 } from './pedidos.schemas.js';
 import { pool } from '../../database/postgres/pool.js';
 import {
@@ -28,12 +28,12 @@ import {
   cancelarPedido,
   deletePedido,
   getHistorialEstados,
-  getEstadisticas
+  getEstadisticas,
 } from './pedidos.service.js';
+import { rateLimitConfigs } from '../../config/rate-limit.config.js';
+import { calcularRutaHastaPedido } from '../entregas/rutas.service.js';
 
-// eslint-disable-next-line @typescript-eslint/require-await
 const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
-
   // =====================================================
   // ENDPOINT PÚBLICO - TRACKING
   // =====================================================
@@ -42,6 +42,9 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.route({
     method: 'GET',
     url: '/tracking/:codigo',
+    config: {
+      rateLimit: rateLimitConfigs.public.tracking,
+    },
     schema: {
       description: 'Rastrear pedido por código de seguimiento (público)',
       tags: ['pedidos'],
@@ -49,8 +52,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       response: {
         200: trackingResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { codigo } = request.params;
@@ -60,12 +63,12 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.tracking) {
         return reply.code(404).send({
           error: 'Código no encontrado',
-          message: result.message || 'El código de seguimiento no existe'
+          message: result.message || 'El código de seguimiento no existe',
         });
       }
 
       return result.tracking;
-    }
+    },
   });
 
   // =====================================================
@@ -85,8 +88,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         201: pedidoSuccessResponseSchema,
         400: errorResponseSchema,
         401: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const data = request.body;
@@ -105,7 +108,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (clienteResult.rows.length === 0) {
           return reply.code(400).send({
             error: 'Cliente no encontrado',
-            message: 'No se encontró información de cliente para este usuario'
+            message: 'No se encontró información de cliente para este usuario',
           });
         }
 
@@ -113,7 +116,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (!clienteRow) {
           return reply.code(400).send({
             error: 'Cliente no encontrado',
-            message: 'No se encontró información de cliente para este usuario'
+            message: 'No se encontró información de cliente para este usuario',
           });
         }
 
@@ -123,27 +126,27 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!clienteId) {
         return reply.code(400).send({
           error: 'Cliente requerido',
-          message: 'Debe especificar el ID del cliente'
+          message: 'Debe especificar el ID del cliente',
         });
       }
 
       const result = await createPedido({
         ...data,
-        cliente_id: clienteId
+        cliente_id: clienteId,
       });
 
       if (!result.success || !result.pedido) {
         return reply.code(400).send({
           error: 'Error al crear pedido',
-          message: result.message || 'No se pudo crear el pedido'
+          message: result.message || 'No se pudo crear el pedido',
         });
       }
 
       return reply.code(201).send({
         message: result.message || 'Pedido creado exitosamente',
-        pedido: result.pedido
+        pedido: result.pedido,
       });
-    }
+    },
   });
 
   // GET /pedidos - Listar pedidos (todos los usuarios autenticados)
@@ -158,8 +161,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       response: {
         200: pedidosListResponseSchema,
         401: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { limit, offset, estado_id, cliente_id, fecha_desde, fecha_hasta } = request.query;
@@ -179,7 +182,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
             pedidos: [],
             total: 0,
             limit,
-            offset
+            offset,
           };
         }
 
@@ -189,7 +192,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
             pedidos: [],
             total: 0,
             limit,
-            offset
+            offset,
           };
         }
 
@@ -200,13 +203,13 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         estado_id,
         cliente_id: filtroClienteId,
         fecha_desde,
-        fecha_hasta
+        fecha_hasta,
       });
 
       if (!result.success) {
         return reply.code(500).send({
           error: 'Error interno',
-          message: result.message || 'Error al listar pedidos'
+          message: result.message || 'Error al listar pedidos',
         });
       }
 
@@ -214,9 +217,9 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         pedidos: result.pedidos || [],
         total: result.total || 0,
         limit: result.limit || 20,
-        offset: result.offset || 0
+        offset: result.offset || 0,
       };
-    }
+    },
   });
 
   // GET /pedidos/:id - Obtener detalle de pedido (todos los usuarios autenticados)
@@ -233,8 +236,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -245,7 +248,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.pedido) {
         return reply.code(404).send({
           error: 'Pedido no encontrado',
-          message: result.message || 'El pedido no existe'
+          message: result.message || 'El pedido no existe',
         });
       }
 
@@ -261,14 +264,14 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
           if (clienteRow && result.pedido.cliente_id !== clienteRow.id) {
             return reply.code(403).send({
               error: 'Acceso denegado',
-              message: 'No tiene permiso para ver este pedido'
+              message: 'No tiene permiso para ver este pedido',
             });
           }
         }
       }
 
       return result.pedido;
-    }
+    },
   });
 
   // PATCH /pedidos/:id/confirmar - Confirmar pedido (gerente, admin)
@@ -287,8 +290,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -300,15 +303,15 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         const statusCode = result.message?.includes('no encontrado') ? 404 : 400;
         return reply.code(statusCode).send({
           error: 'Error al confirmar pedido',
-          message: result.message || 'No se pudo confirmar el pedido'
+          message: result.message || 'No se pudo confirmar el pedido',
         });
       }
 
       return {
         message: result.message || 'Pedido confirmado exitosamente',
-        pedido: result.pedido
+        pedido: result.pedido,
       };
-    }
+    },
   });
 
   // PUT /pedidos/:id/asignar - Reasignar recursos (gerente, admin)
@@ -327,8 +330,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -340,15 +343,15 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         const statusCode = result.message?.includes('no encontrado') ? 404 : 400;
         return reply.code(statusCode).send({
           error: 'Error al reasignar recursos',
-          message: result.message || 'No se pudo reasignar los recursos'
+          message: result.message || 'No se pudo reasignar los recursos',
         });
       }
 
       return {
         message: result.message || 'Recursos reasignados exitosamente',
-        pedido: result.pedido
+        pedido: result.pedido,
       };
-    }
+    },
   });
 
   // PATCH /pedidos/:id/cancelar - Cancelar pedido (cliente si PENDIENTE, admin siempre)
@@ -367,8 +370,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -381,7 +384,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!pedidoResult.success || !pedidoResult.pedido) {
         return reply.code(404).send({
           error: 'Pedido no encontrado',
-          message: 'El pedido no existe'
+          message: 'El pedido no existe',
         });
       }
 
@@ -395,7 +398,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (clienteResult.rows.length === 0) {
           return reply.code(403).send({
             error: 'Acceso denegado',
-            message: 'No tiene permiso para cancelar pedidos'
+            message: 'No tiene permiso para cancelar pedidos',
           });
         }
 
@@ -403,14 +406,14 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (!clienteRow) {
           return reply.code(403).send({
             error: 'Acceso denegado',
-            message: 'No tiene permiso para cancelar pedidos'
+            message: 'No tiene permiso para cancelar pedidos',
           });
         }
 
         if (pedidoResult.pedido.cliente_id !== clienteRow.id) {
           return reply.code(403).send({
             error: 'Acceso denegado',
-            message: 'No tiene permiso para cancelar este pedido'
+            message: 'No tiene permiso para cancelar este pedido',
           });
         }
       }
@@ -420,15 +423,15 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.pedido) {
         return reply.code(400).send({
           error: 'Error al cancelar pedido',
-          message: result.message || 'No se pudo cancelar el pedido'
+          message: result.message || 'No se pudo cancelar el pedido',
         });
       }
 
       return {
         message: result.message || 'Pedido cancelado exitosamente',
-        pedido: result.pedido
+        pedido: result.pedido,
       };
-    }
+    },
   });
 
   // DELETE /pedidos/:id - Eliminar pedido (solo admin, solo cancelados)
@@ -442,14 +445,14 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       params: getPedidoByIdSchema,
       response: {
         200: z.object({
-          message: z.string()
+          message: z.string(),
         }),
         400: errorResponseSchema,
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -459,14 +462,14 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success) {
         return reply.code(400).send({
           error: 'Error al eliminar pedido',
-          message: result.message
+          message: result.message,
         });
       }
 
       return {
-        message: result.message
+        message: result.message,
       };
-    }
+    },
   });
 
   // GET /pedidos/:id/historial - Ver historial de estados (gerente, admin)
@@ -480,13 +483,13 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       params: getPedidoByIdSchema,
       response: {
         200: z.object({
-          historial: z.array(historialEstadoSchema)
+          historial: z.array(historialEstadoSchema),
         }),
         401: errorResponseSchema,
         403: errorResponseSchema,
         404: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { id } = request.params;
@@ -497,14 +500,14 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         const statusCode = result.message?.includes('no encontrado') ? 404 : 500;
         return reply.code(statusCode).send({
           error: 'Error al obtener historial',
-          message: result.message || 'No se pudo obtener el historial'
+          message: result.message || 'No se pudo obtener el historial',
         });
       }
 
       return {
-        historial: result.historial || []
+        historial: result.historial || [],
       };
-    }
+    },
   });
 
   // GET /pedidos/estadisticas - Obtener estadísticas de pedidos (admin, gerente)
@@ -520,8 +523,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: estadisticasPedidosResponseSchema,
         401: errorResponseSchema,
         403: errorResponseSchema,
-        500: errorResponseSchema
-      }
+        500: errorResponseSchema,
+      },
     },
     handler: async (request, reply) => {
       const { dias } = request.query;
@@ -530,12 +533,90 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.data) {
         return reply.code(500).send({
           error: 'Error interno',
-          message: result.message || 'Error al obtener estadísticas'
+          message: result.message || 'Error al obtener estadísticas',
         });
       }
 
       return result.data;
-    }
+    },
+  });
+
+  // GET /pedidos/:id/ruta - Calcular ruta óptima usando Neo4j (admin, gerente)
+  fastify.route({
+    method: 'GET',
+    url: '/:id/ruta',
+    onRequest: [fastify.authenticate],
+    schema: {
+      description: 'Calcular ruta óptima desde la planta hasta la ubicación de entrega del pedido usando Neo4j',
+      tags: ['pedidos'],
+      params: getPedidoByIdSchema,
+      response: {
+        200: z.object({
+          pedido_id: z.number(),
+          ruta_calculada: z.object({
+            nodos: z.array(z.object({
+              id: z.string(),
+              nombre: z.string(),
+              tipo: z.string(),
+              latitud: z.number(),
+              longitud: z.number()
+            })),
+            segmentos: z.array(z.object({
+              origen: z.string(),
+              destino: z.string(),
+              distancia_km: z.number(),
+              tiempo_minutos: z.number()
+            })),
+            distancia_total_km: z.number(),
+            tiempo_total_minutos: z.number()
+          }),
+          interseccion_destino: z.object({
+            id: z.string(),
+            nombre: z.string(),
+            distancia_metros: z.number()
+          }),
+          distancia_total_km: z.number(),
+          tiempo_estimado_minutos: z.number()
+        }),
+        401: errorResponseSchema,
+        404: errorResponseSchema,
+        500: errorResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        // Calcular ruta usando Neo4j
+        const rutaCompleta = await calcularRutaHastaPedido(id);
+
+        return {
+          pedido_id: id,
+          ruta_calculada: rutaCompleta.ruta_calculada,
+          interseccion_destino: {
+            id: rutaCompleta.interseccion_destino.id,
+            nombre: rutaCompleta.interseccion_destino.nombre,
+            distancia_metros: rutaCompleta.interseccion_destino.distancia_metros
+          },
+          distancia_total_km: rutaCompleta.distancia_total_km,
+          tiempo_estimado_minutos: Math.round(rutaCompleta.tiempo_estimado_minutos)
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+        if (errorMessage.includes('no encontrado')) {
+          return reply.code(404).send({
+            error: 'Pedido no encontrado',
+            message: errorMessage
+          });
+        }
+
+        return reply.code(500).send({
+          error: 'Error al calcular ruta',
+          message: errorMessage
+        });
+      }
+    },
   });
 };
 

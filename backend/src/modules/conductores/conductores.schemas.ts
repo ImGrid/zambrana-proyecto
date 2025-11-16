@@ -17,7 +17,9 @@ export const createConductorSchema = z.object({
   nombre_completo: z.string().min(3, 'Nombre debe tener al menos 3 caracteres').max(255),
   ci: z.string().min(3, 'CI debe tener al menos 3 caracteres').max(50),
   telefono: z.string().max(50).optional(),
-  licencia_categoria: z.string().max(50).optional(),
+  licencia_categoria: z.enum(['A', 'B', 'C', 'Profesional'], {
+    errorMap: () => ({ message: 'Categoría de licencia inválida. Debe ser: A, B, C o Profesional' })
+  }).optional(),
   fecha_vencimiento_licencia: z.string().datetime().optional()
 });
 
@@ -26,7 +28,9 @@ export const updateConductorSchema = z.object({
   nombre_completo: z.string().min(3).max(255).optional(),
   ci: z.string().min(3).max(50).optional(),
   telefono: z.string().max(50).optional(),
-  licencia_categoria: z.string().max(50).optional(),
+  licencia_categoria: z.enum(['A', 'B', 'C', 'Profesional'], {
+    errorMap: () => ({ message: 'Categoría de licencia inválida. Debe ser: A, B, C o Profesional' })
+  }).optional(),
   fecha_vencimiento_licencia: z.string().datetime().optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Debe proporcionar al menos un campo para actualizar'

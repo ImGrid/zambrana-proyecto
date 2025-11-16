@@ -1,10 +1,9 @@
-import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { loginApi } from '../api/auth.api';
-import { useAuthStore } from '../stores/auth.store';
-import { getDefaultRouteForRole } from '@/config/routes.config';
-import type { LoginRequest } from '../types/auth.types';
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { loginApi } from "../api/auth.api";
+import { useAuthStore } from "../stores/auth.store";
+import { getDefaultRouteForRole } from "@/config/routes.config";
 
 export const useLogin = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -21,7 +20,8 @@ export const useLogin = () => {
       navigate(defaultRoute, { replace: true });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Error al iniciar sesión';
+      const message =
+        error.response?.data?.message || "Error al iniciar sesión";
       toast.error(message);
     },
   });

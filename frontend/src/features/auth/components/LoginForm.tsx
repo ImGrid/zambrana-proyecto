@@ -36,7 +36,7 @@ export const LoginForm = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="email" className="block text-sm font-medium text-cemento-700 mb-2">
           Email
         </label>
         <input
@@ -44,16 +44,16 @@ export const LoginForm = () => {
           type="email"
           id="email"
           placeholder="admin@zambrana.com"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition"
+          className="w-full px-4 py-3 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent outline-none transition"
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+          <p className="mt-1 text-sm text-error-600">{errors.email.message}</p>
         )}
       </div>
 
       {/* Password */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="password" className="block text-sm font-medium text-cemento-700 mb-2">
           Contraseña
         </label>
         <div className="relative">
@@ -62,12 +62,12 @@ export const LoginForm = () => {
             type={showPassword ? 'text' : 'password'}
             id="password"
             placeholder="••••••••"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition pr-12"
+            className="w-full px-4 py-3 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent outline-none transition pr-12"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-cemento-400 hover:text-cemento-600 transition"
           >
             {showPassword ? (
               <EyeSlashIcon className="w-5 h-5" />
@@ -77,7 +77,7 @@ export const LoginForm = () => {
           </button>
         </div>
         {errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+          <p className="mt-1 text-sm text-error-600">{errors.password.message}</p>
         )}
       </div>
 
@@ -85,7 +85,7 @@ export const LoginForm = () => {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-coral-500 hover:bg-coral-600 text-white font-medium py-3 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isPending ? 'Ingresando...' : 'Ingresar'}
       </button>

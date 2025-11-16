@@ -58,13 +58,13 @@ export function CrearPedidoPage() {
       <div className="mb-8">
         <button
           onClick={() => navigate('/cliente/catalogo')}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center text-cemento-600 hover:text-cemento-900 mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Volver al catálogo
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Crear Pedido</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-3xl font-bold text-cemento-900">Crear Pedido</h1>
+        <p className="text-cemento-600 mt-1">
           Completa los siguientes pasos para realizar tu pedido
         </p>
       </div>
@@ -83,7 +83,7 @@ export function CrearPedidoPage() {
       </div>
 
       {/* Step Content */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-lg border border-piedra-200 shadow-sm p-6 mb-6">
         {currentStep === 1 && <StepCart />}
         {currentStep === 2 && (
           <StepDireccion data={direccionData} onChange={setDireccionData} />

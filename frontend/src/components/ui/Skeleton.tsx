@@ -16,7 +16,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'bg-gray-200 animate-pulse',
+        'bg-cemento-200 animate-pulse',
         {
           'rounded': variant === 'rectangular',
           'rounded-full': variant === 'circular',
@@ -35,7 +35,7 @@ export function Skeleton({
 
 export function ProductCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg border border-piedra-200 shadow-sm overflow-hidden">
       <Skeleton variant="rectangular" className="w-full h-48" />
 
       <div className="p-4 space-y-3">
@@ -53,7 +53,7 @@ export function ProductCardSkeleton() {
 
 export function OrderCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+    <div className="bg-white rounded-lg border border-piedra-200 shadow-sm p-6">
       <div className="flex items-start justify-between mb-4">
         <div className="space-y-2 flex-1">
           <Skeleton variant="text" className="w-32" />

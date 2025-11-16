@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Dialog } from '@headlessui/react';
+import { useState } from 'react';
+import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useCreateMaterial } from '../hooks/useMateriales';
 import type { CreateMaterialData } from '../types/materiales.types';
@@ -56,27 +55,16 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-2xl w-full bg-white rounded-lg shadow-xl">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <Dialog.Title className="text-xl font-semibold text-gray-900">
-              Crear Material
-            </Dialog.Title>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-500 transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="Crear Material"
+      size="lg"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="nombre" className="block text-sm font-medium text-cemento-700 mb-2">
                   Nombre *
                 </label>
                 <input
@@ -86,13 +74,13 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   value={formData.nombre}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                   placeholder="Arena fina"
                 />
               </div>
 
               <div>
-                <label htmlFor="codigo" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="codigo" className="block text-sm font-medium text-cemento-700 mb-2">
                   Código *
                 </label>
                 <input
@@ -102,13 +90,13 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   value={formData.codigo}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                   placeholder="ARE-001"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="descripcion" className="block text-sm font-medium text-cemento-700 mb-2">
                   Descripción
                 </label>
                 <textarea
@@ -117,13 +105,13 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   value={formData.descripcion}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                   placeholder="Descripción opcional del material"
                 />
               </div>
 
               <div>
-                <label htmlFor="unidad_medida" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="unidad_medida" className="block text-sm font-medium text-cemento-700 mb-2">
                   Unidad de Medida *
                 </label>
                 <select
@@ -132,7 +120,7 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   value={formData.unidad_medida}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                 >
                   <option value="m3">m³ (metros cúbicos)</option>
                   <option value="toneladas">Toneladas</option>
@@ -142,7 +130,7 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
               </div>
 
               <div>
-                <label htmlFor="precio_m3" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="precio_m3" className="block text-sm font-medium text-cemento-700 mb-2">
                   Precio por m³ (Bs) *
                 </label>
                 <input
@@ -154,13 +142,13 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   required
                   step="0.01"
                   min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                   placeholder="0.00"
                 />
               </div>
 
               <div>
-                <label htmlFor="stock_minimo" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="stock_minimo" className="block text-sm font-medium text-cemento-700 mb-2">
                   Stock Mínimo *
                 </label>
                 <input
@@ -172,30 +160,28 @@ export const MaterialForm = ({ isOpen, onClose }: MaterialFormProps) => {
                   required
                   step="0.01"
                   min="0"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-piedra-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-transparent"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleClose}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? 'Creando...' : 'Crear Material'}
-              </Button>
-            </div>
-          </form>
-        </Dialog.Panel>
-      </div>
-    </Dialog>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? 'Creando...' : 'Crear Material'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

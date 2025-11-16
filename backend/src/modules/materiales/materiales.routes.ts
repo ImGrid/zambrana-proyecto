@@ -152,11 +152,11 @@ const materialesRoutes: FastifyPluginAsyncZod = async (fastify) => {
     }
   });
 
-  // PUT /materiales/:id/precio - Actualizar precio (solo admin)
+  // PUT /materiales/:id/precio - Actualizar precio (admin o gerente)
   fastify.route({
     method: 'PUT',
     url: '/:id/precio',
-    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
       description: 'Actualizar precio de un material (crea historial automáticamente)',
       tags: ['materiales'],
@@ -262,11 +262,11 @@ const materialesRoutes: FastifyPluginAsyncZod = async (fastify) => {
     }
   });
 
-  // PATCH /materiales/:id/toggle-activo - Activar/desactivar material (solo admin)
+  // PATCH /materiales/:id/toggle-activo - Activar/desactivar material (admin o gerente)
   fastify.route({
     method: 'PATCH',
     url: '/:id/toggle-activo',
-    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
       description: 'Activar o desactivar un material',
       tags: ['materiales'],

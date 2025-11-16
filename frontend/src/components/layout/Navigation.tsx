@@ -6,7 +6,9 @@ import {
   UsersIcon,
   TruckIcon,
   UserIcon,
+  UserGroupIcon,
   MapIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -23,8 +25,10 @@ const navItems: NavItem[] = [
   { name: 'Pedidos', href: '/pedidos', icon: ShoppingCartIcon, roles: ['admin', 'gerente'] },
   { name: 'Stock', href: '/materiales', icon: CubeIcon, roles: ['admin', 'gerente'] },
   { name: 'Clientes', href: '/clientes', icon: UsersIcon, roles: ['admin', 'gerente'] },
-  { name: 'Flota', href: '/camiones', icon: TruckIcon, roles: ['admin', 'gerente'] },
-  { name: 'Conductores', href: '/conductores', icon: UserIcon, roles: ['admin'] },
+  { name: 'Camiones', href: '/camiones', icon: TruckIcon, roles: ['admin', 'gerente'] },
+  { name: 'Conductores', href: '/conductores', icon: UserIcon, roles: ['admin', 'gerente'] },
+  { name: 'Monitor GPS', href: '/monitor-gps', icon: MapPinIcon, roles: ['admin', 'gerente'] },
+  { name: 'Usuarios', href: '/usuarios', icon: UserGroupIcon, roles: ['admin'] },
   { name: 'Mis Entregas', href: '/entregas', icon: MapIcon, roles: ['conductor'] },
 ];
 
@@ -49,8 +53,8 @@ export function Navigation({ onNavigate }: NavigationProps) {
                 cn(
                   'group flex gap-x-3 rounded-lg p-3 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-orange-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-coral-600 text-white'
+                    : 'text-cemento-300 hover:bg-cemento-800 hover:text-white'
                 )
               }
             >
@@ -59,7 +63,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
                   <item.icon
                     className={cn(
                       'h-5 w-5 shrink-0 transition-colors',
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                      isActive ? 'text-white' : 'text-cemento-400 group-hover:text-white'
                     )}
                     aria-hidden="true"
                   />

@@ -92,7 +92,7 @@ export async function encontrarInterseccionCercana(
 /**
  * Calcula la ruta óptima (más corta) entre dos nodos del grafo
  *
- * Uso: Calcular ruta de Planta a Intersección cercana al cliente
+ * Uso: Calcular ruta de Planta Agregados Zambrana a Intersección cercana al cliente
  *
  * @param origenId - ID del nodo origen (ej: "PLANTA_QUILLACOLLO")
  * @param destinoId - ID del nodo destino (ej: "INTER_BLANCO_GALINDO")

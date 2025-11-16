@@ -26,7 +26,7 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
     {
       header: 'Marca / Modelo',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.marca || 'N/A'} {row.modelo && `- ${row.modelo}`}
         </span>
       ),
@@ -34,7 +34,7 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
     {
       header: 'Capacidad',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.capacidad_m3} m³
         </span>
       ),
@@ -43,7 +43,7 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
       header: 'Estado',
       accessor: (row) => {
         if (!row.activo) {
-          return <Badge variant="error">Inactivo</Badge>;
+          return <Badge variant="danger">Inactivo</Badge>;
         }
         if (row.en_mantenimiento) {
           return <Badge variant="warning">Mantenimiento</Badge>;
@@ -64,7 +64,7 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
             <Edit size={16} />
           </Button>
           <Button
-            variant={row.activo ? 'error' : 'success'}
+            variant={row.activo ? 'danger' : 'success'}
             size="sm"
             onClick={() => onToggleActivo?.(row.id)}
             title={row.activo ? 'Desactivar' : 'Activar'}

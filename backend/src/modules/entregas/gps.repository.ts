@@ -1,5 +1,4 @@
 import { pool } from '../../database/postgres/pool.js';
-import { PoolClient } from 'pg';
 
 /**
  * Tipos para posiciones GPS
@@ -7,11 +6,16 @@ import { PoolClient } from 'pg';
 export interface PosicionGPS {
   id: number;
   entrega_id: number;
+  conductor_id: number;
+  camion_id: number;
   latitud: number;
   longitud: number;
   velocidad_kmh: number | null;
   direccion_grados: number | null;
   precision_metros: number | null;
+  nodo_cercano_id: string | null;
+  distancia_nodo_metros: number | null;
+  en_ruta: boolean | null;
   timestamp: Date;
 }
 
@@ -22,6 +26,8 @@ export interface PosicionGPS {
  * Debe ser MUY eficiente
  *
  * @param entrega_id - ID de la entrega
+ * @param conductor_id - ID del conductor
+ * @param camion_id - ID del camion
  * @param latitud - Latitud del GPS
  * @param longitud - Longitud del GPS
  * @param velocidad_kmh - Velocidad en km/h (opcional)
@@ -31,6 +37,8 @@ export interface PosicionGPS {
  */
 export async function insertarPosicionGPS(
   entrega_id: number,
+  conductor_id: number,
+  camion_id: number,
   latitud: number,
   longitud: number,
   velocidad_kmh?: number,
@@ -41,21 +49,25 @@ export async function insertarPosicionGPS(
   await pool.query(
     `INSERT INTO posiciones_gps (
       entrega_id,
+      conductor_id,
+      camion_id,
       latitud,
       longitud,
       velocidad_kmh,
       direccion_grados,
       precision_metros,
       timestamp
-    ) VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, NOW()))`,
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE($9, NOW()))`,
     [
       entrega_id,
+      conductor_id,
+      camion_id,
       latitud,
       longitud,
       velocidad_kmh || null,
       direccion_grados || null,
       precision_metros || null,
-      timestamp || null
+      timestamp || null,
     ]
   );
 }
@@ -68,18 +80,21 @@ export async function insertarPosicionGPS(
  * @param entrega_id - ID de la entrega
  * @returns Última posición GPS o null si no hay
  */
-export async function obtenerUltimaPosicion(
-  entrega_id: number
-): Promise<PosicionGPS | null> {
+export async function obtenerUltimaPosicion(entrega_id: number): Promise<PosicionGPS | null> {
   const result = await pool.query<PosicionGPS>(
     `SELECT
       id,
       entrega_id,
+      conductor_id,
+      camion_id,
       latitud,
       longitud,
       velocidad_kmh,
       direccion_grados,
       precision_metros,
+      nodo_cercano_id,
+      distancia_nodo_metros,
+      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1
@@ -114,11 +129,16 @@ export async function obtenerPosicionesEntrega(
     `SELECT
       id,
       entrega_id,
+      conductor_id,
+      camion_id,
       latitud,
       longitud,
       velocidad_kmh,
       direccion_grados,
       precision_metros,
+      nodo_cercano_id,
+      distancia_nodo_metros,
+      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1
@@ -139,9 +159,7 @@ export async function obtenerPosicionesEntrega(
  * @param entrega_id - ID de la entrega
  * @returns Total de posiciones registradas
  */
-export async function contarPosicionesEntrega(
-  entrega_id: number
-): Promise<number> {
+export async function contarPosicionesEntrega(entrega_id: number): Promise<number> {
   const result = await pool.query<{ count: string }>(
     `SELECT COUNT(*) as count
     FROM posiciones_gps
@@ -161,25 +179,23 @@ export async function contarPosicionesEntrega(
  * @param entrega_id - ID de la entrega
  * @returns Distancia total en kilómetros
  */
-export async function calcularDistanciaRecorrida(
-  entrega_id: number
-): Promise<number> {
+export async function calcularDistanciaRecorrida(entrega_id: number): Promise<number> {
   const result = await pool.query<{ distancia_total_km: number }>(
     `SELECT
-      COALESCE(
-        SUM(
-          ST_Distance(
-            ST_MakePoint(longitud, latitud)::geography,
-            ST_MakePoint(
-              LAG(longitud) OVER (ORDER BY timestamp),
-              LAG(latitud) OVER (ORDER BY timestamp)
-            )::geography
-          )
-        ) / 1000,
-        0
-      ) as distancia_total_km
-    FROM posiciones_gps
-    WHERE entrega_id = $1`,
+      COALESCE(SUM(distancia_segmento) / 1000, 0) as distancia_total_km
+    FROM (
+      SELECT
+        ST_Distance(
+          ST_MakePoint(longitud, latitud)::geography,
+          ST_MakePoint(
+            LAG(longitud) OVER (ORDER BY timestamp),
+            LAG(latitud) OVER (ORDER BY timestamp)
+          )::geography
+        ) as distancia_segmento
+      FROM posiciones_gps
+      WHERE entrega_id = $1
+    ) AS segmentos
+    WHERE distancia_segmento IS NOT NULL`,
     [entrega_id]
   );
 
@@ -231,11 +247,16 @@ export async function obtenerPosicionesPorRango(
     `SELECT
       id,
       entrega_id,
+      conductor_id,
+      camion_id,
       latitud,
       longitud,
       velocidad_kmh,
       direccion_grados,
       precision_metros,
+      nodo_cercano_id,
+      distancia_nodo_metros,
+      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1

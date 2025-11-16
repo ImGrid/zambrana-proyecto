@@ -31,28 +31,28 @@ export const MaterialesStatsGrid = () => {
       value: stats.total_materiales,
       icon: <CubeIcon className="h-6 w-6" />,
       subtitle: `${stats.stock_normal} con stock normal`,
-      colorClass: 'text-orange-500'
+      colorClass: 'text-coral-500'
     },
     {
       title: 'Stock Bajo',
       value: stockBajoTotal,
       icon: <ExclamationTriangleIcon className="h-6 w-6" />,
       subtitle: `${stats.stock_critico} críticos`,
-      colorClass: stockBajoTotal > 0 ? 'text-red-500' : 'text-green-500'
+      colorClass: stockBajoTotal > 0 ? 'text-error-500' : 'text-success-500'
     },
     {
       title: 'Valor de Inventario',
       value: formatCurrency(stats.valor_total_inventario),
       icon: <CurrencyDollarIcon className="h-6 w-6" />,
       subtitle: 'Stock actual',
-      colorClass: 'text-blue-500'
+      colorClass: 'text-info-500'
     },
     {
       title: 'Movimientos (30d)',
       value: stats.movimientos_ultimos_30dias,
       icon: <ArrowTrendingUpIcon className="h-6 w-6" />,
       subtitle: 'Últimos 30 días',
-      colorClass: 'text-purple-500'
+      colorClass: 'text-tierra-500'
     }
   ];
 

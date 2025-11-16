@@ -163,24 +163,30 @@ export interface TrackingPublico {
 // ENUMS Y CONSTANTES
 // =====================================================
 
-// Estados de pedidos (según base de datos)
+// Estados de pedidos (alineados 100% con tabla estados_pedido)
 export enum EstadoPedido {
   PENDIENTE = 1,
   CONFIRMADO = 2,
-  EN_RUTA = 3,
-  ENTREGADO = 4,
-  CANCELADO = 5,
-  RECHAZADO = 6
+  EN_CAMINO = 3,
+  DESVIADO = 4,
+  ATASCADO = 5,
+  RECHAZADO_CLIENTE = 6,
+  ENTREGADO = 7,
+  CANCELADO = 8,
+  EN_PROCESO_MULTIPLE = 9
 }
 
 // Labels para mostrar en UI
 export const ESTADO_PEDIDO_LABELS: Record<number, string> = {
   [EstadoPedido.PENDIENTE]: 'Pendiente',
   [EstadoPedido.CONFIRMADO]: 'Confirmado',
-  [EstadoPedido.EN_RUTA]: 'En Ruta',
+  [EstadoPedido.EN_CAMINO]: 'En Camino',
+  [EstadoPedido.DESVIADO]: 'Desviado',
+  [EstadoPedido.ATASCADO]: 'Atascado',
+  [EstadoPedido.RECHAZADO_CLIENTE]: 'Rechazado',
   [EstadoPedido.ENTREGADO]: 'Entregado',
   [EstadoPedido.CANCELADO]: 'Cancelado',
-  [EstadoPedido.RECHAZADO]: 'Rechazado'
+  [EstadoPedido.EN_PROCESO_MULTIPLE]: 'En Proceso Multiple'
 };
 
 // Variantes de badge según estado
@@ -189,8 +195,11 @@ export type EstadoBadgeVariant = 'default' | 'info' | 'success' | 'warning' | 'd
 export const ESTADO_BADGE_VARIANTS: Record<number, EstadoBadgeVariant> = {
   [EstadoPedido.PENDIENTE]: 'warning',
   [EstadoPedido.CONFIRMADO]: 'info',
-  [EstadoPedido.EN_RUTA]: 'info',
+  [EstadoPedido.EN_CAMINO]: 'info',
+  [EstadoPedido.DESVIADO]: 'warning',
+  [EstadoPedido.ATASCADO]: 'danger',
+  [EstadoPedido.RECHAZADO_CLIENTE]: 'danger',
   [EstadoPedido.ENTREGADO]: 'success',
   [EstadoPedido.CANCELADO]: 'danger',
-  [EstadoPedido.RECHAZADO]: 'danger'
+  [EstadoPedido.EN_PROCESO_MULTIPLE]: 'info'
 };

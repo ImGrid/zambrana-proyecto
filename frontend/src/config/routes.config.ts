@@ -51,12 +51,28 @@ export const ROUTES: Record<string, RouteConfig> = {
     description: 'Gestión de camiones y vehículos'
   },
 
-  // Conductores - Gestión de conductores (solo admin)
+  // Conductores - Gestión de conductores (admin y gerente)
   CONDUCTORES: {
     path: '/conductores',
-    allowedRoles: ['admin'],
+    allowedRoles: ['admin', 'gerente'],
     name: 'Conductores',
     description: 'Gestión de conductores'
+  },
+
+  // Monitor GPS - Monitoreo en tiempo real de entregas
+  MONITOR_GPS: {
+    path: '/monitor-gps',
+    allowedRoles: ['admin', 'gerente'],
+    name: 'Monitor GPS',
+    description: 'Monitoreo GPS en tiempo real de entregas activas'
+  },
+
+  // Usuarios - Gestión de usuarios del sistema (solo admin)
+  USUARIOS: {
+    path: '/usuarios',
+    allowedRoles: ['admin'],
+    name: 'Usuarios',
+    description: 'Gestión de usuarios del sistema'
   },
 
   // Entregas - Vista de entregas para conductores
@@ -81,6 +97,14 @@ export const ROUTES: Record<string, RouteConfig> = {
     allowedRoles: ['cliente'],
     name: 'Catálogo',
     description: 'Catálogo de materiales'
+  },
+
+  // Perfil - Vista de perfil del cliente
+  PERFIL_CLIENTE: {
+    path: '/cliente/perfil',
+    allowedRoles: ['cliente'],
+    name: 'Mi Perfil',
+    description: 'Perfil del cliente'
   }
 };
 

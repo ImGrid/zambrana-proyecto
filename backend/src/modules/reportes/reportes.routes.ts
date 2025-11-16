@@ -200,9 +200,9 @@ const reportesRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.route({
     method: 'POST',
     url: '/refresh',
-    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
-      description: 'Refrescar todas las vistas materializadas (solo admin)',
+      description: 'Refrescar todas las vistas materializadas',
       tags: ['reportes'],
       response: {
         200: refreshViewsResponseSchema,

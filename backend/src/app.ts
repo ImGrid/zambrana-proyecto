@@ -1,8 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUI from '@fastify/swagger-ui';
+import hyperid from 'hyperid';
 import {
   serializerCompiler,
   validatorCompiler,
@@ -10,6 +12,8 @@ import {
   type ZodTypeProvider
 } from 'fastify-type-provider-zod';
 import { env } from './config/env.js';
+import { createLoggerConfig } from './config/logger.js';
+import { globalRateLimitConfig } from './config/rate-limit.config.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import authPlugin from './plugins/auth.plugin.js';
 import authRoutes from './modules/auth/auth.routes.js';
@@ -19,31 +23,36 @@ import camionesRoutes from './modules/camiones/camiones.routes.js';
 import conductoresRoutes from './modules/conductores/conductores.routes.js';
 import clientesRoutes from './modules/clientes/clientes.routes.js';
 import pedidosRoutes from './modules/pedidos/pedidos.routes.js';
-import { entregasRoutes } from './modules/entregas/entregas.routes.js';
+import entregasRoutes from './modules/entregas/entregas.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
+
+// Generador de Request IDs único y rápido
+const generateRequestId = hyperid();
 
 // Construir y configurar la aplicación Fastify
 export const buildApp = async () => {
   const app = Fastify({
-    logger: {
-      level: env.NODE_ENV === 'production' ? 'info' : 'debug',
-      transport:
-        env.NODE_ENV === 'development'
-          ? {
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                translateTime: 'HH:MM:ss Z',
-                ignore: 'pid,hostname',
-              },
-            }
-          : undefined,
+    // Configuración de Request ID
+    requestIdHeader: 'x-request-id',
+    requestIdLogLabel: 'reqId',
+    genReqId: (req) => {
+      // Si el cliente envía un request ID, usarlo; sino, generar uno nuevo
+      return req.headers['x-request-id'] as string || generateRequestId();
     },
+
+    // Logger configurado con logging avanzado (archivos + rotación + redacción)
+    logger: createLoggerConfig(),
   }).withTypeProvider<ZodTypeProvider>();
 
   // Configurar validadores y serializadores de Zod
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Hook para incluir Request ID en headers de respuesta
+  app.addHook('onSend', async (request, reply) => {
+    // Agregar Request ID al header de respuesta
+    reply.header('x-request-id', request.id);
+  });
 
   // Configurar Swagger para documentación automática
   await app.register(fastifySwagger, {
@@ -88,7 +97,9 @@ export const buildApp = async () => {
     // Desarrollo: whitelist de localhost (NO usar origin: true por seguridad)
     return [
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
       'http://localhost:3000'
     ];
   };
@@ -97,13 +108,15 @@ export const buildApp = async () => {
     origin: getAllowedOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Length'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    exposedHeaders: ['Content-Length', 'X-Request-ID'],
     maxAge: 86400,  // Cache preflight 24 horas
     strictPreflight: true,
   });
 
-  // Rate limiting se aplicará por ruta específica (ver auth.routes.ts para login)
+  // Registrar rate limiting global (configurado con global: false)
+  // Se aplicará por ruta específica según configuración
+  await app.register(rateLimit, globalRateLimitConfig);
 
   // Registrar plugin de autenticación
   await app.register(authPlugin);

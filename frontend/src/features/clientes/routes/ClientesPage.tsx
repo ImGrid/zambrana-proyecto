@@ -66,8 +66,8 @@ export const ClientesPage = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Clientes</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-cemento-900">Gestión de Clientes</h1>
+          <p className="text-sm text-cemento-500 mt-1">
             Administración de clientes y sus datos de contacto
           </p>
         </div>
@@ -89,21 +89,23 @@ export const ClientesPage = () => {
         />
       </div>
 
+      {data && totalPages > 1 && (
+        <div className="mb-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={data.total}
+            itemsPerPage={limit}
+          />
+        </div>
+      )}
+
       <ClientesTable
         clientes={clientesFiltered}
         loading={isLoading}
         onEdit={handleOpenEdit}
       />
-
-      {data && totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalItems={data.total}
-          itemsPerPage={limit}
-        />
-      )}
 
       <ClienteForm
         isOpen={isFormOpen}

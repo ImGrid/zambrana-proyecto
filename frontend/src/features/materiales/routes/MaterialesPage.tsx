@@ -15,7 +15,7 @@ import type { Material } from '../types/materiales.types';
 export const MaterialesPage = () => {
   const [page, setPage] = useState(1);
   const [buscar, setBuscar] = useState('');
-  const [soloActivos, setSoloActivos] = useState<boolean | undefined>(true);
+  const [filtroEstado, setFiltroEstado] = useState('');
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isPrecioFormOpen, setIsPrecioFormOpen] = useState(false);
   const [isStockFormOpen, setIsStockFormOpen] = useState(false);
@@ -24,6 +24,8 @@ export const MaterialesPage = () => {
 
   const limit = 20;
   const offset = (page - 1) * limit;
+
+  const soloActivos = filtroEstado === 'activos' ? true : undefined;
 
   const { data, isLoading } = useMateriales({
     limit,
@@ -89,8 +91,8 @@ export const MaterialesPage = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Stock</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-cemento-900">Gestión de Stock</h1>
+          <p className="text-sm text-cemento-500 mt-1">
             Administración de materiales e inventario
           </p>
         </div>
@@ -113,20 +115,26 @@ export const MaterialesPage = () => {
           />
         </div>
         <SelectFilter
-          value={soloActivos === undefined ? 'todos' : soloActivos ? 'activos' : 'inactivos'}
-          onChange={(value) => {
-            if (value === 'todos') setSoloActivos(undefined);
-            else if (value === 'activos') setSoloActivos(true);
-            else setSoloActivos(false);
-            setPage(1);
-          }}
+          value={filtroEstado}
+          onChange={setFiltroEstado}
           options={[
-            { value: 'todos', label: 'Todos los materiales' },
-            { value: 'activos', label: 'Solo activos' },
-            { value: 'inactivos', label: 'Solo inactivos' },
+            { value: 'activos', label: 'Solo Activos' },
           ]}
+          placeholder="Todos los estados"
         />
       </div>
+
+      {data && totalPages > 1 && (
+        <div className="mb-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={data.total}
+            itemsPerPage={limit}
+          />
+        </div>
+      )}
 
       <MaterialesTable
         materiales={materialesFiltered}
@@ -135,16 +143,6 @@ export const MaterialesPage = () => {
         onAjustarStock={handleOpenAjustarStock}
         onToggleActivo={handleToggleActivo}
       />
-
-      {data && totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalItems={data.total}
-          itemsPerPage={limit}
-        />
-      )}
 
       <MaterialForm
         isOpen={isCreateFormOpen}

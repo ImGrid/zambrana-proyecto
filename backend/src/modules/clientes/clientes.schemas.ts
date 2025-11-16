@@ -14,13 +14,9 @@ export const getClienteByIdSchema = z.object({
 // Schema para crear cliente
 export const createClienteSchema = z.object({
   razon_social: z.string().min(3, 'Razón social debe tener al menos 3 caracteres').max(255),
-  tipo_cliente_id: z.number().int().min(1).max(2, 'Tipo de cliente inválido'),
+  tipo_cliente_id: z.number().int().min(1).max(3, 'Tipo de cliente inválido'),
   nit: z.string().max(50).optional(),
-  telefono: z.string().max(50).optional(),
-  direccion: z.string().max(500).optional(),
-  latitud: z.number().min(-90).max(90).optional(),
-  longitud: z.number().min(-180).max(180).optional(),
-  referencia_ubicacion: z.string().max(500).optional()
+  telefono: z.string().max(50).optional()
 });
 
 // Schema para actualizar cliente (admin/gerente)
@@ -28,10 +24,6 @@ export const updateClienteSchema = z.object({
   razon_social: z.string().min(3).max(255).optional(),
   nit: z.string().max(50).optional(),
   telefono: z.string().max(50).optional(),
-  direccion: z.string().max(500).optional(),
-  latitud: z.number().min(-90).max(90).optional(),
-  longitud: z.number().min(-180).max(180).optional(),
-  referencia_ubicacion: z.string().max(500).optional(),
   tipo_cliente_id: z.number().int().min(1).max(3).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Debe proporcionar al menos un campo para actualizar'
@@ -42,20 +34,7 @@ export const updateClienteProfileSchema = z.object({
   razon_social: z.string().min(3, 'Razón social debe tener al menos 3 caracteres').max(255).optional(),
   nit: z.string().max(50).optional().transform(val => val === '' ? undefined : val),
   telefono: z.string().max(50).optional().transform(val => val === '' ? undefined : val),
-  direccion: z.string().max(500).optional().transform(val => val === '' ? undefined : val),
-  latitud: z.number().min(-90).max(90).optional(),
-  longitud: z.number().min(-180).max(180).optional(),
-  referencia_ubicacion: z.string().max(500).optional().transform(val => val === '' ? undefined : val),
   tipo_cliente_id: z.number().int().min(1).max(3).optional()
-}).refine(data => {
-  // Si se proporciona latitud o longitud, ambas deben estar presentes
-  if ((data.latitud !== undefined && data.longitud === undefined) ||
-      (data.latitud === undefined && data.longitud !== undefined)) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Debe proporcionar ambas coordenadas (latitud y longitud) o ninguna'
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Debe proporcionar al menos un campo para actualizar'
 });
@@ -68,10 +47,6 @@ export const clienteResponseSchema = z.object({
   razon_social: z.string(),
   nit: z.string().nullable(),
   telefono: z.string().nullable(),
-  direccion: z.string().nullable(),
-  latitud: z.number().nullable(),
-  longitud: z.number().nullable(),
-  referencia_ubicacion: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
   usuario_email: z.string().nullable(),
@@ -85,7 +60,6 @@ export const clientesListResponseSchema = z.object({
     razon_social: z.string(),
     nit: z.string().nullable(),
     telefono: z.string().nullable(),
-    direccion: z.string().nullable(),
     tipo_cliente_nombre: z.string()
   })),
   total: z.number(),

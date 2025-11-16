@@ -5,6 +5,7 @@ import type {
   Cliente,
   CreateClienteData,
   UpdateClienteData,
+  UpdatePerfilData,
   ClienteUpdateResponse
 } from '../types/clientes.types';
 import type { EstadisticasClientes } from '../types/estadisticas.types';
@@ -44,5 +45,17 @@ export const updateClienteApi = async (
 // GET /api/clientes/estadisticas - Obtener estadísticas de clientes
 export const getEstadisticasClientesApi = async (): Promise<EstadisticasClientes> => {
   const { data } = await api.get<EstadisticasClientes>('/clientes/estadisticas');
+  return data;
+};
+
+// GET /api/clientes/me - Obtener perfil del cliente autenticado
+export const getPerfilClienteApi = async (): Promise<Cliente> => {
+  const { data } = await api.get<Cliente>('/clientes/me');
+  return data;
+};
+
+// PUT /api/clientes/me - Actualizar perfil del cliente autenticado
+export const updatePerfilClienteApi = async (updateData: UpdatePerfilData): Promise<ClienteUpdateResponse> => {
+  const { data } = await api.put<ClienteUpdateResponse>('/clientes/me', updateData);
   return data;
 };

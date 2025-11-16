@@ -61,7 +61,7 @@ export const Pagination = ({
   }
 
   return (
-    <div className={cn('flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6', className)}>
+    <div className={cn('flex items-center justify-between border-t border-piedra-200 bg-white px-4 py-3 sm:px-6', className)}>
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           onClick={() => onPageChange(currentPage - 1)}
@@ -69,8 +69,8 @@ export const Pagination = ({
           className={cn(
             'relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md',
             canGoPrevious
-              ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              : 'border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+              ? 'border border-piedra-300 bg-white text-cemento-700 hover:bg-cemento-50'
+              : 'border border-piedra-200 bg-cemento-50 text-cemento-400 cursor-not-allowed'
           )}
         >
           Anterior
@@ -81,8 +81,8 @@ export const Pagination = ({
           className={cn(
             'relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md',
             canGoNext
-              ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              : 'border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+              ? 'border border-piedra-300 bg-white text-cemento-700 hover:bg-cemento-50'
+              : 'border border-piedra-200 bg-cemento-50 text-cemento-400 cursor-not-allowed'
           )}
         >
           Siguiente
@@ -91,7 +91,7 @@ export const Pagination = ({
 
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-cemento-700">
             {totalItems && itemsPerPage ? (
               <>
                 Mostrando{' '}
@@ -119,8 +119,8 @@ export const Pagination = ({
               onClick={() => onPageChange(currentPage - 1)}
               disabled={!canGoPrevious}
               className={cn(
-                'relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0',
-                canGoPrevious ? 'hover:bg-gray-50' : 'cursor-not-allowed opacity-50'
+                'relative inline-flex items-center rounded-l-md px-2 py-2 text-cemento-400 ring-1 ring-inset ring-piedra-300 focus:z-20 focus:outline-offset-0',
+                canGoPrevious ? 'hover:bg-cemento-50' : 'cursor-not-allowed opacity-50'
               )}
             >
               <span className="sr-only">Anterior</span>
@@ -133,12 +133,12 @@ export const Pagination = ({
                 onClick={() => typeof page === 'number' ? onPageChange(page) : undefined}
                 disabled={page === '...'}
                 className={cn(
-                  'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0',
+                  'relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-piedra-300 focus:z-20 focus:outline-offset-0',
                   page === currentPage
-                    ? 'z-10 bg-orange-500 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500'
+                    ? 'z-10 bg-coral-500 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coral-500'
                     : page === '...'
-                    ? 'text-gray-700 cursor-default'
-                    : 'text-gray-900 hover:bg-gray-50'
+                    ? 'text-cemento-700 cursor-default'
+                    : 'text-cemento-900 hover:bg-cemento-50'
                 )}
               >
                 {page}
@@ -149,8 +149,8 @@ export const Pagination = ({
               onClick={() => onPageChange(currentPage + 1)}
               disabled={!canGoNext}
               className={cn(
-                'relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 focus:z-20 focus:outline-offset-0',
-                canGoNext ? 'hover:bg-gray-50' : 'cursor-not-allowed opacity-50'
+                'relative inline-flex items-center rounded-r-md px-2 py-2 text-cemento-400 ring-1 ring-inset ring-piedra-300 focus:z-20 focus:outline-offset-0',
+                canGoNext ? 'hover:bg-cemento-50' : 'cursor-not-allowed opacity-50'
               )}
             >
               <span className="sr-only">Siguiente</span>

@@ -164,11 +164,11 @@ const camionesRoutes: FastifyPluginAsyncZod = async (fastify) => {
     }
   });
 
-  // PATCH /camiones/:id/toggle-activo - Activar/desactivar camión (solo admin)
+  // PATCH /camiones/:id/toggle-activo - Activar/desactivar camión (admin o gerente)
   fastify.route({
     method: 'PATCH',
     url: '/:id/toggle-activo',
-    onRequest: [fastify.authenticate, fastify.requireRole('admin')],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
       description: 'Activar o desactivar un camión',
       tags: ['camiones'],

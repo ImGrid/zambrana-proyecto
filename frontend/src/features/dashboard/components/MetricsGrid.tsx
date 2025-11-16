@@ -60,7 +60,7 @@ export const MetricsGrid = ({ dias = 30 }: MetricsGridProps) => {
         value={stats.total_pedidos}
         icon={<ShoppingCartIcon className="h-6 w-6" />}
         subtitle="Todos los pedidos"
-        colorClass="text-orange-500"
+        colorClass="text-coral-500"
       />
 
       <MetricCard
@@ -68,7 +68,7 @@ export const MetricsGrid = ({ dias = 30 }: MetricsGridProps) => {
         value={`${tasaEntrega.toFixed(1)}%`}
         icon={<CheckCircleIcon className="h-6 w-6" />}
         subtitle="Pedidos entregados"
-        colorClass="text-green-500"
+        colorClass="text-success-500"
       />
 
       <MetricCard
@@ -76,7 +76,7 @@ export const MetricsGrid = ({ dias = 30 }: MetricsGridProps) => {
         value={formatCurrency(stats.monto_total_mes)}
         icon={<CurrencyDollarIcon className="h-6 w-6" />}
         subtitle="Mes actual"
-        colorClass="text-blue-500"
+        colorClass="text-info-500"
       />
 
       <MetricCard
@@ -84,7 +84,7 @@ export const MetricsGrid = ({ dias = 30 }: MetricsGridProps) => {
         value={formatCurrency(promedioDiario)}
         icon={<ChartBarIcon className="h-6 w-6" />}
         subtitle="Ingresos por día"
-        colorClass="text-purple-500"
+        colorClass="text-tierra-500"
       />
     </div>
   );

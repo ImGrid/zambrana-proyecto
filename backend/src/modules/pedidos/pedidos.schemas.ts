@@ -106,6 +106,7 @@ export const pedidoResponseSchema = z.object({
   distancia_km: z.coerce.number().nullable(),
   observaciones: z.string().nullable(),
   motivo_rechazo: z.string().nullable(),
+  ruta_calculada: z.any().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
   items: z.array(detallePedidoResponseSchema).optional()

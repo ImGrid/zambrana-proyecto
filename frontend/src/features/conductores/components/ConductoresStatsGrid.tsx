@@ -22,28 +22,28 @@ export const ConductoresStatsGrid = () => {
       value: stats.total_conductores,
       icon: <UserGroupIcon className="h-6 w-6" />,
       subtitle: `${stats.conductores_activos} activos`,
-      colorClass: 'text-orange-500'
+      colorClass: 'text-coral-500'
     },
     {
       title: 'Conductores Activos',
       value: stats.conductores_activos,
       icon: <CheckCircleIcon className="h-6 w-6" />,
       subtitle: 'Disponibles',
-      colorClass: 'text-green-500'
+      colorClass: 'text-success-500'
     },
     {
       title: 'Licencias por Vencer',
       value: stats.licencias_por_vencer_30dias,
       icon: <ExclamationCircleIcon className="h-6 w-6" />,
       subtitle: 'Próximos 30 días',
-      colorClass: stats.licencias_por_vencer_30dias > 0 ? 'text-yellow-500' : 'text-green-500'
+      colorClass: stats.licencias_por_vencer_30dias > 0 ? 'text-arena-500' : 'text-success-500'
     },
     {
       title: 'Licencias Vencidas',
       value: stats.licencias_vencidas,
       icon: <IdentificationIcon className="h-6 w-6" />,
       subtitle: 'Requiere atención',
-      colorClass: stats.licencias_vencidas > 0 ? 'text-red-500' : 'text-green-500'
+      colorClass: stats.licencias_vencidas > 0 ? 'text-error-500' : 'text-success-500'
     }
   ];
 

@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import { env } from '../../config/env.js';
 
 /**
@@ -17,6 +17,12 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000, // Cerrar conexiones inactivas después de 30s
   connectionTimeoutMillis: 2000, // Timeout al obtener conexión del pool
 });
+
+// Configurar parser para tipo NUMERIC (OID 1700)
+// Por defecto pg retorna NUMERIC como string para preservar precisión
+// Como nuestros valores numéricos están dentro del rango seguro de JavaScript,
+// configuramos el parser para convertir automáticamente a number
+types.setTypeParser(1700, (val: string) => parseFloat(val));
 
 // Manejar errores del pool
 pool.on('error', (err) => {

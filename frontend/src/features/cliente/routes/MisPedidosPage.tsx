@@ -38,8 +38,8 @@ export const MisPedidosPage = () => {
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mis Pedidos</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-cemento-900 mb-2">Mis Pedidos</h1>
+        <p className="text-cemento-600">
           Consulta el estado de tus pedidos y realiza seguimiento
         </p>
       </div>
@@ -47,21 +47,21 @@ export const MisPedidosPage = () => {
       {/* Filtros */}
       <div className="mb-6">
         <div className="flex items-center gap-3">
-          <Filter className="h-5 w-5 text-gray-400" />
+          <Filter className="h-5 w-5 text-cemento-400" />
           <select
             value={estadoFilter || ''}
             onChange={(e) => {
               setEstadoFilter(e.target.value ? Number(e.target.value) : undefined);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="px-4 py-2 border border-piedra-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500 focus:border-transparent"
           >
             <option value="">Todos los estados</option>
             <option value="1">Pendiente</option>
             <option value="2">Confirmado</option>
             <option value="3">En camino</option>
-            <option value="4">Entregado</option>
-            <option value="5">Cancelado</option>
+            <option value="7">Entregado</option>
+            <option value="8">Cancelado</option>
           </select>
         </div>
       </div>
@@ -72,11 +72,11 @@ export const MisPedidosPage = () => {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
+              className="bg-white rounded-lg border border-piedra-200 p-6 animate-pulse"
             >
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-6 bg-cemento-200 rounded w-1/3 mb-4"></div>
+              <div className="h-4 bg-cemento-200 rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-cemento-200 rounded w-1/2"></div>
             </div>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import * as pedidosRepo from './pedidos.repository.js';
 import { pool } from '../../database/postgres/pool.js';
+import { calcularRutaHastaPedido } from '../entregas/rutas.service.js';
 
 // =====================================================
 // TIPOS PARA RESPUESTAS
@@ -515,6 +516,33 @@ export async function confirmarPedido(
         success: false,
         message: 'Error al confirmar el pedido',
       };
+    }
+
+    // Calcular ruta óptima usando Neo4j
+    try {
+      const rutaCompleta = await calcularRutaHastaPedido(id);
+
+      // Guardar ruta calculada en la base de datos
+      await pool.query(
+        `UPDATE pedidos
+         SET ruta_calculada = $1,
+             distancia_km = $2,
+             eta_minutos = $3
+         WHERE id = $4`,
+        [
+          JSON.stringify(rutaCompleta.ruta_calculada),
+          rutaCompleta.distancia_total_km,
+          Math.round(rutaCompleta.tiempo_estimado_minutos),
+          id
+        ]
+      );
+
+      console.log(`Ruta calculada y guardada para pedido ${id}: ${rutaCompleta.distancia_total_km} km, ${Math.round(rutaCompleta.tiempo_estimado_minutos)} min`);
+    } catch (errorRuta) {
+      // Si falla el cálculo de ruta, no fallar la confirmación del pedido
+      // Solo registrar el error
+      console.error(`Error al calcular ruta para pedido ${id}:`, errorRuta);
+      console.warn('El pedido fue confirmado pero no se pudo calcular la ruta con Neo4j');
     }
 
     // Obtener pedido actualizado

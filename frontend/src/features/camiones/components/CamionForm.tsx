@@ -103,14 +103,14 @@ export const CamionForm = ({ isOpen, onClose, camion }: CamionFormProps) => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de Camión <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-cemento-700 mb-1">
+              Tipo de Camión <span className="text-error-500">*</span>
             </label>
             <select
               required
               value={formData.tipo_camion_id}
               onChange={(e) => setFormData({ ...formData, tipo_camion_id: Number(e.target.value) })}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+              className="block w-full rounded-lg border border-piedra-300 px-3 py-2 text-cemento-900 focus:border-coral-500 focus:ring-2 focus:ring-coral-500/20"
             >
               <option value={TipoCamion.VOLQUETA_SIMPLE}>{TIPO_CAMION_LABELS[TipoCamion.VOLQUETA_SIMPLE]}</option>
               <option value={TipoCamion.VOLQUETA_DOBLE}>{TIPO_CAMION_LABELS[TipoCamion.VOLQUETA_DOBLE]}</option>

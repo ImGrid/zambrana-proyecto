@@ -18,6 +18,13 @@ interface StepResumenProps {
   direccionData: DireccionData;
 }
 
+// Convierte fecha YYYY-MM-DD a formato ISO datetime YYYY-MM-DDTHH:MM:SSZ
+function convertirFechaAISO(fecha: string): string {
+  if (!fecha) return '';
+  // Agregar la hora 00:00:00 y timezone Z (UTC)
+  return `${fecha}T00:00:00Z`;
+}
+
 export function StepResumen({ direccionData }: StepResumenProps) {
   const items = useCartStore((state) => state.items);
   const getTotalM3 = useCartStore((state) => state.getTotalM3);
@@ -31,7 +38,9 @@ export function StepResumen({ direccionData }: StepResumenProps) {
       latitud_entrega: direccionData.latitud_entrega,
       longitud_entrega: direccionData.longitud_entrega,
       referencia_ubicacion: direccionData.referencia_ubicacion || undefined,
-      fecha_entrega_solicitada: direccionData.fecha_entrega_solicitada || undefined,
+      fecha_entrega_solicitada: direccionData.fecha_entrega_solicitada
+        ? convertirFechaAISO(direccionData.fecha_entrega_solicitada)
+        : undefined,
       observaciones: direccionData.observaciones || undefined,
       items: items.map((item) => ({
         material_id: item.material_id,
@@ -50,28 +59,28 @@ export function StepResumen({ direccionData }: StepResumenProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-xl font-semibold text-cemento-900 mb-4">
           Resumen del pedido
         </h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-cemento-600 mb-4">
           Revisa la información antes de confirmar tu pedido
         </p>
       </div>
 
       {/* Dirección de entrega */}
       <Card padding="md">
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-          <MapPin className="h-5 w-5 mr-2 text-orange-600" />
+        <h3 className="font-semibold text-cemento-900 mb-3 flex items-center">
+          <MapPin className="h-5 w-5 mr-2 text-coral-600" />
           Dirección de entrega
         </h3>
         <div className="space-y-2 text-sm">
-          <p className="text-gray-700">{direccionData.direccion_entrega}</p>
+          <p className="text-cemento-700">{direccionData.direccion_entrega}</p>
           {direccionData.referencia_ubicacion && (
-            <p className="text-gray-600">
+            <p className="text-cemento-600">
               <span className="font-medium">Referencia:</span> {direccionData.referencia_ubicacion}
             </p>
           )}
-          <p className="text-gray-500 text-xs">
+          <p className="text-cemento-500 text-xs">
             Coordenadas: {direccionData.latitud_entrega.toFixed(4)}, {direccionData.longitud_entrega.toFixed(4)}
           </p>
         </div>
@@ -80,13 +89,13 @@ export function StepResumen({ direccionData }: StepResumenProps) {
       {/* Fecha y observaciones */}
       {(direccionData.fecha_entrega_solicitada || direccionData.observaciones) && (
         <Card padding="md">
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-            <FileText className="h-5 w-5 mr-2 text-orange-600" />
+          <h3 className="font-semibold text-cemento-900 mb-3 flex items-center">
+            <FileText className="h-5 w-5 mr-2 text-coral-600" />
             Información adicional
           </h3>
           <div className="space-y-2 text-sm">
             {direccionData.fecha_entrega_solicitada && (
-              <p className="text-gray-700">
+              <p className="text-cemento-700">
                 <Calendar className="h-4 w-4 inline mr-1" />
                 <span className="font-medium">Fecha solicitada:</span>{' '}
                 {new Date(direccionData.fecha_entrega_solicitada).toLocaleDateString('es-BO', {
@@ -98,8 +107,8 @@ export function StepResumen({ direccionData }: StepResumenProps) {
             )}
             {direccionData.observaciones && (
               <div>
-                <p className="font-medium text-gray-700 mb-1">Observaciones:</p>
-                <p className="text-gray-600">{direccionData.observaciones}</p>
+                <p className="font-medium text-cemento-700 mb-1">Observaciones:</p>
+                <p className="text-cemento-600">{direccionData.observaciones}</p>
               </div>
             )}
           </div>
@@ -108,23 +117,23 @@ export function StepResumen({ direccionData }: StepResumenProps) {
 
       {/* Materiales */}
       <Card padding="md">
-        <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-          <Package className="h-5 w-5 mr-2 text-orange-600" />
+        <h3 className="font-semibold text-cemento-900 mb-3 flex items-center">
+          <Package className="h-5 w-5 mr-2 text-coral-600" />
           Materiales ({items.length})
         </h3>
         <div className="space-y-3">
           {items.map((item) => (
             <div
               key={item.material_id}
-              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+              className="flex items-center justify-between py-2 border-b border-cemento-100 last:border-0"
             >
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{item.material_nombre}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-medium text-cemento-900">{item.material_nombre}</p>
+                <p className="text-sm text-cemento-500">
                   {item.cantidad_m3} {item.unidad_medida} × Bs {item.precio_unitario.toFixed(2)}
                 </p>
               </div>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-cemento-900">
                 Bs {item.subtotal.toFixed(2)}
               </p>
             </div>
@@ -132,14 +141,14 @@ export function StepResumen({ direccionData }: StepResumenProps) {
         </div>
 
         {/* Totales */}
-        <div className="border-t border-gray-200 mt-4 pt-4 space-y-2">
-          <div className="flex items-center justify-between text-gray-700">
+        <div className="border-t border-piedra-200 mt-4 pt-4 space-y-2">
+          <div className="flex items-center justify-between text-cemento-700">
             <span>Total m³:</span>
             <span className="font-medium">{getTotalM3().toFixed(2)} m³</span>
           </div>
           <div className="flex items-center justify-between text-xl font-bold">
-            <span className="text-gray-900">Total a pagar:</span>
-            <span className="text-orange-600">Bs {getTotalMonto().toFixed(2)}</span>
+            <span className="text-cemento-900">Total a pagar:</span>
+            <span className="text-coral-600">Bs {getTotalMonto().toFixed(2)}</span>
           </div>
         </div>
       </Card>

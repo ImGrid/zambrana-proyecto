@@ -46,8 +46,8 @@ export function Modal({
             }
           )}
         >
-          <DialogTitle className="text-lg font-semibold text-gray-900">{title}</DialogTitle>
-          {description && <Description className="text-sm text-gray-500">{description}</Description>}
+          <DialogTitle className="text-lg font-semibold text-cemento-900">{title}</DialogTitle>
+          {description && <Description className="text-sm text-cemento-500">{description}</Description>}
           <div className="mt-4">{children}</div>
           {footer && <div className="mt-6 flex justify-end gap-3">{footer}</div>}
         </DialogPanel>

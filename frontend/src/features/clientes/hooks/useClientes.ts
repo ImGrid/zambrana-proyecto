@@ -5,9 +5,11 @@ import {
   getClienteByIdApi,
   createClienteApi,
   updateClienteApi,
-  getEstadisticasClientesApi
+  getEstadisticasClientesApi,
+  getPerfilClienteApi,
+  updatePerfilClienteApi
 } from '../api/clientes.api';
-import type { ListClientesParams, CreateClienteData, UpdateClienteData } from '../types/clientes.types';
+import type { ListClientesParams, CreateClienteData, UpdateClienteData, UpdatePerfilData } from '../types/clientes.types';
 
 // Hook para listar clientes
 export const useClientes = (params?: ListClientesParams) => {
@@ -71,5 +73,31 @@ export const useEstadisticasClientes = () => {
     queryFn: getEstadisticasClientesApi,
     staleTime: 1000 * 60 * 5, // 5 minutos
     gcTime: 1000 * 60 * 10, // 10 minutos
+  });
+};
+
+// Hook para obtener perfil del cliente autenticado
+export const usePerfilCliente = () => {
+  return useQuery({
+    queryKey: ['cliente', 'perfil'],
+    queryFn: getPerfilClienteApi,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
+};
+
+// Hook para actualizar perfil del cliente autenticado
+export const useUpdatePerfilCliente = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePerfilData) => updatePerfilClienteApi(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['cliente', 'perfil'] });
+      toast.success(response.message || 'Perfil actualizado correctamente');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Error al actualizar perfil';
+      toast.error(message);
+    },
   });
 };

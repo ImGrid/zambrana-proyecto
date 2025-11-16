@@ -36,6 +36,16 @@ export default tseslint.config(
   },
 
   {
+    // Configuración específica para archivos de rutas de Fastify
+    // Los plugins de Fastify deben ser async según la convención,
+    // incluso si no usan await directamente
+    files: ['src/modules/**/*.routes.ts'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+    },
+  },
+
+  {
     // Ignorar archivos
     ignores: ['dist/**', 'node_modules/**', 'eslint.config.js'],
   }

@@ -38,10 +38,10 @@ export function Timeline({ items, className }: TimelineProps) {
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors',
                 {
-                  'border-green-600 bg-green-600 text-white': item.status === 'completed',
-                  'border-blue-600 bg-blue-600 text-white': item.status === 'current',
-                  'border-gray-300 bg-white text-gray-400': item.status === 'upcoming',
-                  'border-red-600 bg-red-600 text-white': item.status === 'cancelled',
+                  'border-success-600 bg-success-600 text-white': item.status === 'completed',
+                  'border-coral-600 bg-coral-600 text-white': item.status === 'current',
+                  'border-piedra-300 bg-white text-cemento-400': item.status === 'upcoming',
+                  'border-error-600 bg-error-600 text-white': item.status === 'cancelled',
                 }
               )}
             >
@@ -53,9 +53,9 @@ export function Timeline({ items, className }: TimelineProps) {
                 className={cn(
                   'absolute left-5 top-10 w-0.5 h-full transition-colors',
                   {
-                    'bg-green-600': item.status === 'completed',
-                    'bg-gray-300': item.status === 'upcoming' || item.status === 'current',
-                    'bg-red-600': item.status === 'cancelled',
+                    'bg-success-600': item.status === 'completed',
+                    'bg-piedra-300': item.status === 'upcoming' || item.status === 'current',
+                    'bg-error-600': item.status === 'cancelled',
                   }
                 )}
               />
@@ -66,10 +66,10 @@ export function Timeline({ items, className }: TimelineProps) {
                 className={cn(
                   'font-medium text-sm',
                   {
-                    'text-green-600': item.status === 'completed',
-                    'text-blue-600': item.status === 'current',
-                    'text-gray-500': item.status === 'upcoming',
-                    'text-red-600': item.status === 'cancelled',
+                    'text-success-600': item.status === 'completed',
+                    'text-coral-600': item.status === 'current',
+                    'text-cemento-500': item.status === 'upcoming',
+                    'text-error-600': item.status === 'cancelled',
                   }
                 )}
               >
@@ -77,13 +77,13 @@ export function Timeline({ items, className }: TimelineProps) {
               </div>
 
               {item.description && (
-                <div className="text-sm text-gray-600 mt-1">
+                <div className="text-sm text-cemento-600 mt-1">
                   {item.description}
                 </div>
               )}
 
               {item.timestamp && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-cemento-500 mt-1">
                   {typeof item.timestamp === 'string'
                     ? format(new Date(item.timestamp), "dd 'de' MMMM, yyyy 'a las' HH:mm", {
                         locale: es,

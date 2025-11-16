@@ -48,8 +48,8 @@ export function ProductCard({ material }: ProductCardProps) {
   return (
     <Card variant="product" padding="none" className="h-full flex flex-col">
       {/* Imagen placeholder */}
-      <div className="bg-gradient-to-br from-orange-100 to-orange-50 h-48 flex items-center justify-center relative">
-        <Package className="h-20 w-20 text-orange-300" />
+      <div className="bg-gradient-to-br from-coral-100 to-coral-50 h-48 flex items-center justify-center relative">
+        <Package className="h-20 w-20 text-coral-300" />
 
         {/* Badge de stock */}
         {sinStock ? (
@@ -68,31 +68,31 @@ export function ProductCard({ material }: ProductCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+            <h3 className="font-semibold text-cemento-900 text-lg leading-tight">
               {nombre}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">Código: {codigo}</p>
+            <p className="text-sm text-cemento-500 mt-0.5">Código: {codigo}</p>
           </div>
         </div>
 
         {/* Info */}
         <div className="space-y-3 mt-auto">
           <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-orange-600">
+            <span className="text-2xl font-bold text-coral-600">
               Bs {precio_m3.toFixed(2)}
             </span>
-            <span className="text-sm text-gray-600">/{unidad_medida}</span>
+            <span className="text-sm text-cemento-600">/{unidad_medida}</span>
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Disponible:</span>
-            <span className={`font-medium ${sinStock ? 'text-red-600' : stockBajo ? 'text-yellow-600' : 'text-green-600'}`}>
+            <span className="text-cemento-600">Disponible:</span>
+            <span className={`font-medium ${sinStock ? 'text-error-600' : stockBajo ? 'text-arena-600' : 'text-success-600'}`}>
               {stock_actual} {unidad_medida}
             </span>
           </div>
 
           {/* Cantidad y Agregar al carrito */}
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-piedra-100">
             <div className="flex gap-2">
               <Input
                 type="number"

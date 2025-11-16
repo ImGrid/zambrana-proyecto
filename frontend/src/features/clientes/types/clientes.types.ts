@@ -8,10 +8,6 @@ export interface Cliente {
   razon_social: string;
   nit: string | null;
   telefono: string | null;
-  direccion: string | null;
-  latitud: number | null;
-  longitud: number | null;
-  referencia_ubicacion: string | null;
   created_at: string;
   updated_at: string;
   usuario_email: string | null;
@@ -24,7 +20,6 @@ export interface ClienteListItem {
   razon_social: string;
   nit: string | null;
   telefono: string | null;
-  direccion: string | null;
   tipo_cliente_nombre: string;
 }
 
@@ -48,21 +43,21 @@ export interface CreateClienteData {
   tipo_cliente_id: number;
   nit?: string;
   telefono?: string;
-  direccion?: string;
-  latitud?: number;
-  longitud?: number;
-  referencia_ubicacion?: string;
 }
 
-// Datos para actualizar cliente
+// Datos para actualizar cliente (admin/gerente)
 export interface UpdateClienteData {
   razon_social?: string;
   nit?: string;
   telefono?: string;
-  direccion?: string;
-  latitud?: number;
-  longitud?: number;
-  referencia_ubicacion?: string;
+  tipo_cliente_id?: number;
+}
+
+// Datos para actualizar perfil (cliente actualiza sus propios datos)
+export interface UpdatePerfilData {
+  razon_social?: string;
+  nit?: string;
+  telefono?: string;
   tipo_cliente_id?: number;
 }
 
@@ -74,11 +69,13 @@ export interface ClienteUpdateResponse {
 
 // Tipos de cliente disponibles (según base de datos)
 export enum TipoCliente {
-  EMPRESA = 1,
-  PARTICULAR = 2
+  INDEPENDIENTE = 1,
+  HORMIGONERA = 2,
+  CONSTRUCTORA = 3
 }
 
 export const TIPO_CLIENTE_LABELS: Record<number, string> = {
-  [TipoCliente.EMPRESA]: 'Empresa',
-  [TipoCliente.PARTICULAR]: 'Particular'
+  [TipoCliente.INDEPENDIENTE]: 'Independiente',
+  [TipoCliente.HORMIGONERA]: 'Hormigonera',
+  [TipoCliente.CONSTRUCTORA]: 'Constructora'
 };

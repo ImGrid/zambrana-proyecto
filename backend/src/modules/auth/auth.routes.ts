@@ -1,6 +1,5 @@
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import rateLimit from '@fastify/rate-limit';
 import {
   loginSchema,
   registerSchema,
@@ -8,24 +7,20 @@ import {
   loginResponseSchema,
   refreshResponseSchema,
   messageResponseSchema,
-  userSchema
+  userSchema,
 } from './auth.schemas.js';
 import { registerUser, loginUser, getUserById, registerPublicUser } from './auth.service.js';
 import { env } from '../../config/env.js';
+import { rateLimitConfigs } from '../../config/rate-limit.config.js';
 
 const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
-
-  // Registrar rate limiting para este módulo
-  await fastify.register(rateLimit, {
-    max: 5,
-    timeWindow: '5 minutes',
-    skipOnError: false
-  });
-
   // POST /register - Registrar nuevo usuario (admin)
   fastify.route({
     method: 'POST',
     url: '/register',
+    config: {
+      rateLimit: rateLimitConfigs.auth.register,
+    },
     schema: {
       description: 'Registrar un nuevo usuario en el sistema (uso administrativo)',
       tags: ['auth'],
@@ -34,9 +29,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         201: loginResponseSchema,
         400: z.object({
           error: z.string(),
-          message: z.string()
-        })
-      }
+          message: z.string(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       const { email, password, rol, nombre } = request.body;
@@ -46,7 +41,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.user) {
         return reply.code(400).send({
           error: 'Error de registro',
-          message: result.message || 'No se pudo registrar el usuario'
+          message: result.message || 'No se pudo registrar el usuario',
         });
       }
 
@@ -67,20 +62,23 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         secure: env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60  // 7 días en segundos
+        maxAge: 7 * 24 * 60 * 60, // 7 días en segundos
       });
 
       return reply.code(201).send({
         accessToken,
-        user: result.user
+        user: result.user,
       });
-    }
+    },
   });
 
   // POST /register/public - Registro público para clientes
   fastify.route({
     method: 'POST',
     url: '/register/public',
+    config: {
+      rateLimit: rateLimitConfigs.auth.registerPublic,
+    },
     schema: {
       description: 'Registro público para nuevos clientes',
       tags: ['auth'],
@@ -89,9 +87,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         201: loginResponseSchema,
         400: z.object({
           error: z.string(),
-          message: z.string()
-        })
-      }
+          message: z.string(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       const { nombre, email, password, tipo_cliente_id, telefono } = request.body;
@@ -101,13 +99,13 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         email,
         password,
         tipo_cliente_id,
-        telefono
+        telefono,
       });
 
       if (!result.success || !result.user) {
         return reply.code(400).send({
           error: 'Error de registro',
-          message: result.message || 'No se pudo registrar el usuario'
+          message: result.message || 'No se pudo registrar el usuario',
         });
       }
 
@@ -128,20 +126,23 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         secure: env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60  // 7 días en segundos
+        maxAge: 7 * 24 * 60 * 60, // 7 días en segundos
       });
 
       return reply.code(201).send({
         accessToken,
-        user: result.user
+        user: result.user,
       });
-    }
+    },
   });
 
   // POST /login - Iniciar sesión
   fastify.route({
     method: 'POST',
     url: '/login',
+    config: {
+      rateLimit: rateLimitConfigs.auth.login,
+    },
     schema: {
       description: 'Iniciar sesión con email y contraseña',
       tags: ['auth'],
@@ -150,9 +151,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: loginResponseSchema,
         401: z.object({
           error: z.string(),
-          message: z.string()
-        })
-      }
+          message: z.string(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       const { email, password } = request.body;
@@ -162,7 +163,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!result.success || !result.user) {
         return reply.code(401).send({
           error: 'Credenciales inválidas',
-          message: result.message || 'Email o contraseña incorrectos'
+          message: result.message || 'Email o contraseña incorrectos',
         });
       }
 
@@ -184,20 +185,23 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         secure: env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60  // 7 días en segundos
+        maxAge: 7 * 24 * 60 * 60, // 7 días en segundos
       });
 
       return {
         accessToken,
-        user: result.user
+        user: result.user,
       };
-    }
+    },
   });
 
   // POST /refresh - Renovar access token usando refresh token
   fastify.route({
     method: 'POST',
     url: '/refresh',
+    config: {
+      rateLimit: rateLimitConfigs.auth.general,
+    },
     schema: {
       description: 'Renovar access token usando el refresh token de la cookie',
       tags: ['auth'],
@@ -205,9 +209,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: refreshResponseSchema,
         401: z.object({
           error: z.string(),
-          message: z.string()
-        })
-      }
+          message: z.string(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       try {
@@ -220,7 +224,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (payload.type !== 'refresh') {
           return reply.code(401).send({
             error: 'Token inválido',
-            message: 'Este no es un refresh token válido'
+            message: 'Este no es un refresh token válido',
           });
         }
 
@@ -230,7 +234,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         if (!user) {
           return reply.code(401).send({
             error: 'Usuario no encontrado',
-            message: 'El usuario ya no existe en el sistema'
+            message: 'El usuario ya no existe en el sistema',
           });
         }
 
@@ -244,31 +248,34 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       } catch {
         return reply.code(401).send({
           error: 'Refresh token inválido',
-          message: 'El refresh token ha expirado o es inválido'
+          message: 'El refresh token ha expirado o es inválido',
         });
       }
-    }
+    },
   });
 
   // POST /logout - Cerrar sesión
   fastify.route({
     method: 'POST',
     url: '/logout',
+    config: {
+      rateLimit: rateLimitConfigs.auth.general,
+    },
     schema: {
       description: 'Cerrar sesión eliminando el refresh token',
       tags: ['auth'],
       response: {
-        200: messageResponseSchema
-      }
+        200: messageResponseSchema,
+      },
     },
     handler: async (_request, reply) => {
       // Eliminar cookie de refresh token
       reply.clearCookie('refreshToken', { path: '/' });
 
       return {
-        message: 'Sesión cerrada correctamente'
+        message: 'Sesión cerrada correctamente',
       };
-    }
+    },
   });
 
   // GET /me - Obtener usuario actual (requiere autenticación)
@@ -276,6 +283,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
     method: 'GET',
     url: '/me',
     onRequest: [fastify.authenticate],
+    config: {
+      rateLimit: rateLimitConfigs.auth.general,
+    },
     schema: {
       description: 'Obtener información del usuario autenticado',
       tags: ['auth'],
@@ -283,9 +293,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: userSchema,
         401: z.object({
           error: z.string(),
-          message: z.string()
-        })
-      }
+          message: z.string(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       const payload = request.user as { id: number };
@@ -295,12 +305,12 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       if (!user) {
         return reply.code(401).send({
           error: 'Usuario no encontrado',
-          message: 'El usuario ya no existe en el sistema'
+          message: 'El usuario ya no existe en el sistema',
         });
       }
 
       return user;
-    }
+    },
   });
 };
 

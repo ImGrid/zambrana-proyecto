@@ -82,8 +82,8 @@ export const CamionesPage = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Flota</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-cemento-900">Gestión de Flota</h1>
+          <p className="text-sm text-cemento-500 mt-1">
             Administración de camiones y vehículos de la empresa
           </p>
         </div>
@@ -118,6 +118,18 @@ export const CamionesPage = () => {
         </div>
       </div>
 
+      {data && totalPages > 1 && (
+        <div className="mb-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={data.total}
+            itemsPerPage={limit}
+          />
+        </div>
+      )}
+
       <CamionesTable
         camiones={camionesFiltered}
         loading={isLoading}
@@ -125,16 +137,6 @@ export const CamionesPage = () => {
         onToggleActivo={handleToggleActivo}
         onToggleMantenimiento={handleToggleMantenimiento}
       />
-
-      {data && totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalItems={data.total}
-          itemsPerPage={limit}
-        />
-      )}
 
       <CamionForm
         isOpen={isFormOpen}

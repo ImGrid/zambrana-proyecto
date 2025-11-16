@@ -78,17 +78,19 @@ export const PedidosPage = () => {
     { value: 'todos', label: 'Todos los estados' },
     { value: String(EstadoPedido.PENDIENTE), label: ESTADO_PEDIDO_LABELS[EstadoPedido.PENDIENTE] },
     { value: String(EstadoPedido.CONFIRMADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.CONFIRMADO] },
-    { value: String(EstadoPedido.EN_RUTA), label: ESTADO_PEDIDO_LABELS[EstadoPedido.EN_RUTA] },
+    { value: String(EstadoPedido.EN_CAMINO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.EN_CAMINO] },
+    { value: String(EstadoPedido.DESVIADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.DESVIADO] },
+    { value: String(EstadoPedido.ATASCADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.ATASCADO] },
+    { value: String(EstadoPedido.RECHAZADO_CLIENTE), label: ESTADO_PEDIDO_LABELS[EstadoPedido.RECHAZADO_CLIENTE] },
     { value: String(EstadoPedido.ENTREGADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.ENTREGADO] },
     { value: String(EstadoPedido.CANCELADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.CANCELADO] },
-    { value: String(EstadoPedido.RECHAZADO), label: ESTADO_PEDIDO_LABELS[EstadoPedido.RECHAZADO] },
   ];
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Gestión de Pedidos</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-cemento-900">Gestión de Pedidos</h1>
+        <p className="text-sm text-cemento-500 mt-1">
           Administración de pedidos de clientes y seguimiento de entregas
         </p>
       </div>
@@ -119,6 +121,18 @@ export const PedidosPage = () => {
         />
       </div>
 
+      {data && totalPages > 1 && (
+        <div className="mb-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={data.total}
+            itemsPerPage={limit}
+          />
+        </div>
+      )}
+
       <PedidosTable
         pedidos={pedidosFiltered}
         loading={isLoading}
@@ -126,16 +140,6 @@ export const PedidosPage = () => {
         onAprobar={handleAprobar}
         onRechazar={handleRechazar}
       />
-
-      {data && totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalItems={data.total}
-          itemsPerPage={limit}
-        />
-      )}
 
       {pedidoSeleccionado && (
         <>

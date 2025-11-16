@@ -25,7 +25,7 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
     {
       header: 'Teléfono',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.telefono || 'N/A'}
         </span>
       ),
@@ -33,7 +33,7 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
     {
       header: 'Categoría Licencia',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.licencia_categoria || 'N/A'}
         </span>
       ),
@@ -43,7 +43,7 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
       accessor: (row) => (
         row.activo
           ? <Badge variant="success">Activo</Badge>
-          : <Badge variant="error">Inactivo</Badge>
+          : <Badge variant="danger">Inactivo</Badge>
       ),
     },
     {
@@ -59,7 +59,7 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
             <Edit size={16} />
           </Button>
           <Button
-            variant={row.activo ? 'error' : 'success'}
+            variant={row.activo ? 'danger' : 'success'}
             size="sm"
             onClick={() => onToggleActivo?.(row.id)}
             title={row.activo ? 'Desactivar' : 'Activar'}

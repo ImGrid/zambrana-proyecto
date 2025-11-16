@@ -8,7 +8,7 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cemento-50">
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <Sidebar className="hidden lg:fixed lg:inset-y-0 lg:z-10 lg:flex lg:w-64" />

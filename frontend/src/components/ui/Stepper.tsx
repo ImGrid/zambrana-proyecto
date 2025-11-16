@@ -53,9 +53,9 @@ export function Stepper({
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold text-sm transition-colors',
                   {
-                    'border-green-600 bg-green-600 text-white': isCompleted,
-                    'border-blue-600 bg-blue-600 text-white': isCurrent,
-                    'border-gray-300 bg-white text-gray-500': isUpcoming,
+                    'border-success-600 bg-success-600 text-white': isCompleted,
+                    'border-coral-600 bg-coral-600 text-white': isCurrent,
+                    'border-piedra-300 bg-white text-cemento-500': isUpcoming,
                   }
                 )}
               >
@@ -77,16 +77,16 @@ export function Stepper({
                   className={cn(
                     'text-sm font-medium',
                     {
-                      'text-green-600': isCompleted,
-                      'text-blue-600': isCurrent,
-                      'text-gray-500': isUpcoming,
+                      'text-success-600': isCompleted,
+                      'text-coral-600': isCurrent,
+                      'text-cemento-500': isUpcoming,
                     }
                   )}
                 >
                   {step.label}
                 </div>
                 {step.description && (
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-cemento-500 mt-1">
                     {step.description}
                   </div>
                 )}
@@ -98,8 +98,8 @@ export function Stepper({
                 className={cn(
                   'transition-colors',
                   {
-                    'border-green-600': stepNumber < currentStep,
-                    'border-gray-300': stepNumber >= currentStep,
+                    'border-success-600': stepNumber < currentStep,
+                    'border-piedra-300': stepNumber >= currentStep,
                   },
                   orientation === 'horizontal'
                     ? 'flex-1 border-t-2 mx-2 mt-[-40px]'

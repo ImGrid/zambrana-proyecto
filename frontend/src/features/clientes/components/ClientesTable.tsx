@@ -20,7 +20,7 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
     {
       header: 'NIT',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.nit || 'N/A'}
         </span>
       ),
@@ -28,7 +28,7 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
     {
       header: 'Teléfono',
       accessor: (row) => (
-        <span className="text-gray-900">
+        <span className="text-cemento-900">
           {row.telefono || 'N/A'}
         </span>
       ),
@@ -36,7 +36,7 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
     {
       header: 'Dirección',
       accessor: (row) => (
-        <span className="text-gray-900 truncate max-w-xs block">
+        <span className="text-cemento-900 truncate max-w-xs block">
           {row.direccion || 'N/A'}
         </span>
       ),
@@ -44,7 +44,10 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
     {
       header: 'Tipo',
       accessor: (row) => (
-        <Badge variant={row.tipo_cliente_nombre === 'Empresa' ? 'info' : 'default'}>
+        <Badge variant={
+          row.tipo_cliente_nombre === 'Constructora' ? 'info' :
+          row.tipo_cliente_nombre === 'Hormigonera' ? 'warning' : 'neutral'
+        }>
           {row.tipo_cliente_nombre}
         </Badge>
       ),

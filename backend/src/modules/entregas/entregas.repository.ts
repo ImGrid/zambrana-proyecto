@@ -7,17 +7,18 @@ import { PoolClient } from 'pg';
 export interface Entrega {
   id: number;
   pedido_id: number;
-  camion_id: number;
   conductor_id: number;
-  estado: 'EN_CAMINO' | 'COMPLETADA' | 'CANCELADA';
-  hora_salida: Date | null;
-  hora_llegada_estimada: Date | null;
-  hora_llegada_real: Date | null;
-  distancia_km: number | null;
-  ruta_calculada: any | null;
+  camion_id: number;
+  hora_salida_planta: Date | null;
+  hora_llegada_cliente: Date | null;
+  duracion_minutos: number | null;
+  ruta_planificada_id: string | null;
+  desviaciones_detectadas: number | null;
+  porcentaje_adherencia: number | null;
+  entregado: boolean | null;
   firma_cliente: string | null;
   foto_comprobante: string | null;
-  observaciones: string | null;
+  observaciones_entrega: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -25,15 +26,16 @@ export interface Entrega {
 export interface EntregaConDetalle extends Entrega {
   pedido: {
     id: number;
-    numero_pedido: string;
+    codigo_seguimiento: string;
     estado: string;
     fecha_entrega: Date;
+    direccion_entrega: string;
+    latitud_entrega: number;
+    longitud_entrega: number;
+    ruta_calculada: any | null;
     cliente: {
       id: number;
       razon_social: string;
-      direccion: string;
-      latitud: number;
-      longitud: number;
       telefono: string;
     };
   };
@@ -54,7 +56,9 @@ export interface EventoEntrega {
   entrega_id: number;
   tipo_evento: string;
   descripcion: string | null;
-  timestamp: Date;
+  latitud: number | null;
+  longitud: number | null;
+  created_at: Date;
 }
 
 /**
@@ -65,18 +69,14 @@ export interface EventoEntrega {
  * @param pedido_id - ID del pedido a entregar
  * @param camion_id - ID del camión asignado
  * @param conductor_id - ID del conductor asignado
- * @param ruta_calculada - Objeto JSON con la ruta calculada desde Neo4j
- * @param distancia_km - Distancia total de la ruta
- * @param hora_llegada_estimada - Hora estimada de llegada
+ * @param ruta_planificada_id - ID de la ruta planificada (opcional)
  * @returns Entrega creada
  */
 export async function createEntrega(
   pedido_id: number,
   camion_id: number,
   conductor_id: number,
-  ruta_calculada: any,
-  distancia_km: number,
-  hora_llegada_estimada: Date
+  ruta_planificada_id?: string
 ): Promise<Entrega> {
   const client = await pool.connect();
 
@@ -85,10 +85,11 @@ export async function createEntrega(
 
     // Verificar que el pedido existe y esta confirmado
     const pedidoCheck = await client.query(
-      `SELECT id, estado
-       FROM pedidos
-       WHERE id = $1 AND estado = 'CONFIRMADO'
-       FOR UPDATE`,
+      `SELECT p.id
+       FROM pedidos p
+       JOIN estados_pedido e ON p.estado_actual_id = e.id
+       WHERE p.id = $1 AND e.nombre = 'CONFIRMADO'
+       FOR UPDATE OF p`,
       [pedido_id]
     );
 
@@ -98,9 +99,9 @@ export async function createEntrega(
 
     // Verificar que el camion esta disponible
     const camionCheck = await client.query(
-      `SELECT id, estado
+      `SELECT id
        FROM camiones
-       WHERE id = $1 AND estado = 'DISPONIBLE'
+       WHERE id = $1 AND activo = TRUE
        FOR UPDATE`,
       [camion_id]
     );
@@ -111,9 +112,9 @@ export async function createEntrega(
 
     // Verificar que el conductor esta disponible
     const conductorCheck = await client.query(
-      `SELECT id, estado
+      `SELECT id
        FROM conductores
-       WHERE id = $1 AND estado = 'DISPONIBLE'
+       WHERE id = $1 AND activo = TRUE
        FOR UPDATE`,
       [conductor_id]
     );
@@ -126,42 +127,24 @@ export async function createEntrega(
     const entregaResult = await client.query<Entrega>(
       `INSERT INTO entregas (
         pedido_id,
-        camion_id,
         conductor_id,
-        estado,
-        hora_salida,
-        hora_llegada_estimada,
-        distancia_km,
-        ruta_calculada
-      ) VALUES ($1, $2, $3, 'EN_CAMINO', NOW(), $4, $5, $6)
+        camion_id,
+        hora_salida_planta,
+        ruta_planificada_id,
+        entregado
+      ) VALUES ($1, $2, $3, NOW(), $4, FALSE)
       RETURNING *`,
-      [pedido_id, camion_id, conductor_id, hora_llegada_estimada, distancia_km, JSON.stringify(ruta_calculada)]
+      [pedido_id, conductor_id, camion_id, ruta_planificada_id || null]
     );
 
     const entrega = entregaResult.rows[0];
 
-    // Actualizar estado del pedido
+    // Actualizar estado del pedido a EN_CAMINO (estado_actual_id = 3)
     await client.query(
       `UPDATE pedidos
-       SET estado = 'EN_CAMINO', updated_at = NOW()
+       SET estado_actual_id = 3, updated_at = NOW()
        WHERE id = $1`,
       [pedido_id]
-    );
-
-    // Actualizar estado del camion
-    await client.query(
-      `UPDATE camiones
-       SET estado = 'EN_RUTA', updated_at = NOW()
-       WHERE id = $1`,
-      [camion_id]
-    );
-
-    // Actualizar estado del conductor
-    await client.query(
-      `UPDATE conductores
-       SET estado = 'EN_RUTA', updated_at = NOW()
-       WHERE id = $1`,
-      [conductor_id]
     );
 
     // Registrar evento de salida
@@ -170,7 +153,7 @@ export async function createEntrega(
         entrega_id,
         tipo_evento,
         descripcion,
-        timestamp
+        created_at
       ) VALUES ($1, 'SALIDA_PLANTA', 'Camion salio de la planta', NOW())`,
       [entrega.id]
     );
@@ -200,15 +183,16 @@ export async function findEntregaById(id: number): Promise<EntregaConDetalle | n
       e.*,
       jsonb_build_object(
         'id', p.id,
-        'numero_pedido', p.numero_pedido,
-        'estado', p.estado,
-        'fecha_entrega', p.fecha_entrega,
+        'codigo_seguimiento', p.codigo_seguimiento,
+        'estado', ep.nombre,
+        'fecha_entrega', COALESCE(p.fecha_entrega_real, p.fecha_entrega_estimada),
+        'direccion_entrega', p.direccion_entrega,
+        'latitud_entrega', p.latitud_entrega,
+        'longitud_entrega', p.longitud_entrega,
+        'ruta_calculada', p.ruta_calculada,
         'cliente', jsonb_build_object(
           'id', c.id,
           'razon_social', c.razon_social,
-          'direccion', c.direccion,
-          'latitud', c.latitud,
-          'longitud', c.longitud,
           'telefono', c.telefono
         )
       ) as pedido,
@@ -227,6 +211,7 @@ export async function findEntregaById(id: number): Promise<EntregaConDetalle | n
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN camiones cam ON e.camion_id = cam.id
     INNER JOIN conductores cond ON e.conductor_id = cond.id
+    INNER JOIN estados_pedido ep ON p.estado_actual_id = ep.id
     WHERE e.id = $1`,
     [id]
   );
@@ -272,15 +257,16 @@ export async function findEntregasActivas(): Promise<EntregaConDetalle[]> {
       e.*,
       jsonb_build_object(
         'id', p.id,
-        'numero_pedido', p.numero_pedido,
-        'estado', p.estado,
-        'fecha_entrega', p.fecha_entrega,
+        'codigo_seguimiento', p.codigo_seguimiento,
+        'estado', ep.nombre,
+        'fecha_entrega', COALESCE(p.fecha_entrega_real, p.fecha_entrega_estimada),
+        'direccion_entrega', p.direccion_entrega,
+        'latitud_entrega', p.latitud_entrega,
+        'longitud_entrega', p.longitud_entrega,
+        'ruta_calculada', p.ruta_calculada,
         'cliente', jsonb_build_object(
           'id', c.id,
           'razon_social', c.razon_social,
-          'direccion', c.direccion,
-          'latitud', c.latitud,
-          'longitud', c.longitud,
           'telefono', c.telefono
         )
       ) as pedido,
@@ -299,8 +285,10 @@ export async function findEntregasActivas(): Promise<EntregaConDetalle[]> {
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN camiones cam ON e.camion_id = cam.id
     INNER JOIN conductores cond ON e.conductor_id = cond.id
-    WHERE e.estado = 'EN_CAMINO'
-    ORDER BY e.hora_salida DESC`
+    INNER JOIN estados_pedido ep ON p.estado_actual_id = ep.id
+    WHERE e.entregado = FALSE AND e.hora_salida_planta IS NOT NULL
+      AND (e.observaciones_entrega IS NULL OR e.observaciones_entrega NOT LIKE 'CANCELADA:%')
+    ORDER BY e.hora_salida_planta DESC`
   );
 
   return result.rows;
@@ -321,20 +309,30 @@ export async function findEntregasByEstado(
   limite: number = 50,
   offset: number = 0
 ): Promise<EntregaConDetalle[]> {
+  let whereClause = '';
+
+  if (estado === 'EN_CAMINO') {
+    whereClause = 'WHERE e.entregado = FALSE AND e.hora_salida_planta IS NOT NULL AND (e.observaciones_entrega IS NULL OR e.observaciones_entrega NOT LIKE \'CANCELADA:%\')';
+  } else if (estado === 'COMPLETADA') {
+    whereClause = 'WHERE e.entregado = TRUE';
+  } else if (estado === 'CANCELADA') {
+    whereClause = 'WHERE e.observaciones_entrega LIKE \'CANCELADA:%\'';
+  }
+
   const result = await pool.query<EntregaConDetalle>(
     `SELECT
       e.*,
       jsonb_build_object(
         'id', p.id,
-        'numero_pedido', p.numero_pedido,
-        'estado', p.estado,
-        'fecha_entrega', p.fecha_entrega,
+        'codigo_seguimiento', p.codigo_seguimiento,
+        'estado', ep.nombre,
+        'fecha_entrega', COALESCE(p.fecha_entrega_real, p.fecha_entrega_estimada),
+        'direccion_entrega', p.direccion_entrega,
+        'latitud_entrega', p.latitud_entrega,
+        'longitud_entrega', p.longitud_entrega,
         'cliente', jsonb_build_object(
           'id', c.id,
           'razon_social', c.razon_social,
-          'direccion', c.direccion,
-          'latitud', c.latitud,
-          'longitud', c.longitud,
           'telefono', c.telefono
         )
       ) as pedido,
@@ -353,10 +351,11 @@ export async function findEntregasByEstado(
     INNER JOIN clientes c ON p.cliente_id = c.id
     INNER JOIN camiones cam ON e.camion_id = cam.id
     INNER JOIN conductores cond ON e.conductor_id = cond.id
-    WHERE e.estado = $1
+    INNER JOIN estados_pedido ep ON p.estado_actual_id = ep.id
+    ${whereClause}
     ORDER BY e.created_at DESC
-    LIMIT $2 OFFSET $3`,
-    [estado, limite, offset]
+    LIMIT $1 OFFSET $2`,
+    [limite, offset]
   );
 
   return result.rows;
@@ -387,7 +386,7 @@ export async function finalizarEntrega(
     // Verificar que la entrega existe y esta en camino
     const entregaCheck = await client.query<Entrega>(
       `SELECT * FROM entregas
-       WHERE id = $1 AND estado = 'EN_CAMINO'
+       WHERE id = $1 AND entregado = FALSE AND hora_salida_planta IS NOT NULL
        FOR UPDATE`,
       [id]
     );
@@ -398,15 +397,16 @@ export async function finalizarEntrega(
 
     const entrega = entregaCheck.rows[0];
 
-    // Actualizar la entrega
+    // Actualizar la entrega con calculo automatico de duracion_minutos
     const entregaResult = await client.query<Entrega>(
       `UPDATE entregas
        SET
-         estado = 'COMPLETADA',
-         hora_llegada_real = NOW(),
+         entregado = TRUE,
+         hora_llegada_cliente = NOW(),
+         duracion_minutos = EXTRACT(EPOCH FROM (NOW() - hora_salida_planta)) / 60,
          firma_cliente = COALESCE($2, firma_cliente),
          foto_comprobante = COALESCE($3, foto_comprobante),
-         observaciones = COALESCE($4, observaciones),
+         observaciones_entrega = COALESCE($4, observaciones_entrega),
          updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
@@ -415,26 +415,26 @@ export async function finalizarEntrega(
 
     const entregaFinalizada = entregaResult.rows[0];
 
-    // Actualizar estado del pedido
+    // Actualizar estado del pedido a ENTREGADO (ID = 7)
     await client.query(
       `UPDATE pedidos
-       SET estado = 'ENTREGADO', updated_at = NOW()
+       SET estado_actual_id = 7, updated_at = NOW()
        WHERE id = $1`,
       [entrega.pedido_id]
     );
 
-    // Liberar camion
+    // Liberar camion (no hay campo estado en camiones)
     await client.query(
       `UPDATE camiones
-       SET estado = 'DISPONIBLE', updated_at = NOW()
+       SET updated_at = NOW()
        WHERE id = $1`,
       [entrega.camion_id]
     );
 
-    // Liberar conductor
+    // Liberar conductor (no hay campo estado en conductores)
     await client.query(
       `UPDATE conductores
-       SET estado = 'DISPONIBLE', updated_at = NOW()
+       SET updated_at = NOW()
        WHERE id = $1`,
       [entrega.conductor_id]
     );
@@ -445,7 +445,7 @@ export async function finalizarEntrega(
         entrega_id,
         tipo_evento,
         descripcion,
-        timestamp
+        created_at
       ) VALUES ($1, 'ENTREGA_COMPLETADA', $2, NOW())`,
       [id, observaciones || 'Entrega finalizada exitosamente']
     );
@@ -482,7 +482,7 @@ export async function cancelarEntrega(
     // Verificar que la entrega existe y esta en camino
     const entregaCheck = await client.query<Entrega>(
       `SELECT * FROM entregas
-       WHERE id = $1 AND estado = 'EN_CAMINO'
+       WHERE id = $1 AND entregado = FALSE AND hora_salida_planta IS NOT NULL
        FOR UPDATE`,
       [id]
     );
@@ -493,38 +493,37 @@ export async function cancelarEntrega(
 
     const entrega = entregaCheck.rows[0];
 
-    // Actualizar la entrega
+    // Actualizar la entrega (cancelada se marca poniendo observaciones)
     const entregaResult = await client.query<Entrega>(
       `UPDATE entregas
        SET
-         estado = 'CANCELADA',
-         observaciones = $2,
+         observaciones_entrega = $2,
          updated_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [id, motivo]
+      [id, 'CANCELADA: ' + motivo]
     );
 
-    // Revertir estado del pedido a CONFIRMADO
+    // Revertir estado del pedido a CONFIRMADO (estado_id = 2)
     await client.query(
       `UPDATE pedidos
-       SET estado = 'CONFIRMADO', updated_at = NOW()
+       SET estado_actual_id = 2, updated_at = NOW()
        WHERE id = $1`,
       [entrega.pedido_id]
     );
 
-    // Liberar camion
+    // Actualizar timestamp de camion (no hay campo estado)
     await client.query(
       `UPDATE camiones
-       SET estado = 'DISPONIBLE', updated_at = NOW()
+       SET updated_at = NOW()
        WHERE id = $1`,
       [entrega.camion_id]
     );
 
-    // Liberar conductor
+    // Actualizar timestamp de conductor (no hay campo estado)
     await client.query(
       `UPDATE conductores
-       SET estado = 'DISPONIBLE', updated_at = NOW()
+       SET updated_at = NOW()
        WHERE id = $1`,
       [entrega.conductor_id]
     );
@@ -535,7 +534,7 @@ export async function cancelarEntrega(
         entrega_id,
         tipo_evento,
         descripcion,
-        timestamp
+        created_at
       ) VALUES ($1, 'CANCELADA', $2, NOW())`,
       [id, motivo]
     );
@@ -566,7 +565,7 @@ export async function obtenerEventosEntrega(
     `SELECT *
      FROM eventos_entrega
      WHERE entrega_id = $1
-     ORDER BY timestamp ASC`,
+     ORDER BY created_at ASC`,
     [entrega_id]
   );
 
@@ -587,11 +586,11 @@ export async function contarEntregasPorEstado(
   let query = 'SELECT COUNT(*) as count FROM entregas e';
 
   if (estado === 'EN_CAMINO') {
-    query += ' WHERE e.entregado = FALSE AND e.hora_salida_planta IS NOT NULL';
+    query += ' WHERE e.entregado = FALSE AND e.hora_salida_planta IS NOT NULL AND (e.observaciones_entrega IS NULL OR e.observaciones_entrega NOT LIKE \'CANCELADA:%\')';
   } else if (estado === 'COMPLETADA') {
     query += ' WHERE e.entregado = TRUE';
   } else if (estado === 'CANCELADA') {
-    query += ' INNER JOIN pedidos p ON e.pedido_id = p.id WHERE p.estado_actual_id = 8';
+    query += ' WHERE e.observaciones_entrega LIKE \'CANCELADA:%\'';
   }
 
   const result = await pool.query<{ count: string }>(query);

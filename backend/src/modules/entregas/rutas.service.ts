@@ -28,46 +28,52 @@ const PLANTA_QUILLACOLLO_ID = 'PLANTA_QUILLACOLLO';
 const VELOCIDAD_PROMEDIO_KMH = 40;
 
 /**
- * Calcula la ruta completa desde la planta hasta un cliente
+ * Calcula la ruta completa desde la planta hasta la ubicacion de entrega de un pedido
  *
  * FLUJO:
- * 1. Obtener coordenadas del cliente desde PostgreSQL
- * 2. Encontrar interseccion mas cercana al cliente en Neo4j
+ * 1. Obtener coordenadas de entrega del pedido desde PostgreSQL
+ * 2. Encontrar interseccion mas cercana a la ubicacion de entrega en Neo4j
  * 3. Calcular ruta desde planta a interseccion en Neo4j
- * 4. Calcular distancia desde interseccion al cliente (linea recta)
+ * 4. Calcular distancia desde interseccion al destino final (linea recta)
  * 5. Sumar distancias y calcular tiempo estimado
  *
- * @param cliente_id - ID del cliente en PostgreSQL
+ * @param pedido_id - ID del pedido en PostgreSQL
  * @returns Ruta completa con todos los detalles
  */
-export async function calcularRutaHastaCliente(cliente_id: number): Promise<RutaCompleta> {
-  // PASO 1: Obtener coordenadas del cliente desde PostgreSQL
-  const clienteResult = await pool.query(
-    `SELECT id, razon_social, direccion, latitud, longitud
-     FROM clientes
-     WHERE id = $1`,
-    [cliente_id]
+export async function calcularRutaHastaPedido(pedido_id: number): Promise<RutaCompleta> {
+  // PASO 1: Obtener coordenadas de entrega del pedido desde PostgreSQL
+  const pedidoResult = await pool.query(
+    `SELECT p.id, p.direccion_entrega, p.latitud_entrega, p.longitud_entrega,
+            c.razon_social, c.id as cliente_id
+     FROM pedidos p
+     JOIN clientes c ON p.cliente_id = c.id
+     WHERE p.id = $1`,
+    [pedido_id]
   );
 
-  if (clienteResult.rows.length === 0) {
-    throw new Error(`Cliente con ID ${cliente_id} no encontrado`);
+  if (pedidoResult.rows.length === 0) {
+    throw new Error(`Pedido con ID ${pedido_id} no encontrado`);
   }
 
-  const cliente = clienteResult.rows[0];
+  const pedido = pedidoResult.rows[0];
 
-  if (!cliente.latitud || !cliente.longitud) {
-    throw new Error(`Cliente ${cliente.razon_social} no tiene coordenadas GPS configuradas`);
+  if (!pedido.latitud_entrega || !pedido.longitud_entrega) {
+    throw new Error(`Pedido ${pedido_id} no tiene coordenadas de entrega configuradas`);
   }
 
-  // PASO 2: Encontrar interseccion mas cercana al cliente en Neo4j
+  // Convertir coordenadas a numeros (PostgreSQL NUMERIC retorna strings)
+  const latitud = parseFloat(pedido.latitud_entrega);
+  const longitud = parseFloat(pedido.longitud_entrega);
+
+  // PASO 2: Encontrar interseccion mas cercana a la ubicacion de entrega en Neo4j
   const interseccionDestino = await encontrarInterseccionCercana(
-    cliente.latitud,
-    cliente.longitud
+    latitud,
+    longitud
   );
 
   if (!interseccionDestino) {
     throw new Error(
-      `No se encontro ninguna interseccion cercana al cliente ${cliente.razon_social}. ` +
+      `No se encontro ninguna interseccion cercana a la direccion: ${pedido.direccion_entrega}. ` +
       `Verifica que el grafo Neo4j este sincronizado.`
     );
   }
@@ -85,34 +91,34 @@ export async function calcularRutaHastaCliente(cliente_id: number): Promise<Ruta
     );
   }
 
-  // PASO 4: Calcular distancia desde interseccion al cliente
+  // PASO 4: Calcular distancia desde interseccion hasta el destino final
   // Usamos formula de Haversine para distancia entre dos puntos GPS
-  const distanciaInterseccionCliente = calcularDistanciaHaversine(
+  const distanciaInterseccionDestino = calcularDistanciaHaversine(
     interseccionDestino.latitud,
     interseccionDestino.longitud,
-    cliente.latitud,
-    cliente.longitud
+    latitud,
+    longitud
   );
 
   // PASO 5: Sumar distancias totales y calcular tiempo estimado
-  const distanciaTotal = rutaCalculada.distancia_total_km + distanciaInterseccionCliente;
+  const distanciaTotal = rutaCalculada.distancia_total_km + distanciaInterseccionDestino;
 
-  // Tiempo: usar tiempo_total_minutos de Neo4j + tiempo adicional al cliente
-  const tiempoAdicionalMinutos = (distanciaInterseccionCliente / VELOCIDAD_PROMEDIO_KMH) * 60;
+  // Tiempo: usar tiempo_total_minutos de Neo4j + tiempo adicional al destino final
+  const tiempoAdicionalMinutos = (distanciaInterseccionDestino / VELOCIDAD_PROMEDIO_KMH) * 60;
   const tiempoTotal = rutaCalculada.tiempo_total_minutos + tiempoAdicionalMinutos;
 
   return {
     ruta_calculada: rutaCalculada,
     interseccion_destino: interseccionDestino,
-    distancia_cliente_interseccion: distanciaInterseccionCliente,
+    distancia_cliente_interseccion: distanciaInterseccionDestino,
     distancia_total_km: distanciaTotal,
     tiempo_estimado_minutos: tiempoTotal,
     cliente: {
-      id: cliente.id,
-      razon_social: cliente.razon_social,
-      direccion: cliente.direccion,
-      latitud: cliente.latitud,
-      longitud: cliente.longitud
+      id: pedido.cliente_id,
+      razon_social: pedido.razon_social,
+      direccion: pedido.direccion_entrega,
+      latitud: latitud,
+      longitud: longitud
     }
   };
 }

@@ -2,7 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const cardVariants = cva(
-  'bg-white rounded-lg border border-gray-200 overflow-hidden',
+  'bg-white rounded-lg border border-piedra-200 overflow-hidden',
   {
     variants: {
       variant: {
@@ -42,9 +42,9 @@ export function Card({
     <div className={cn(cardVariants({ variant, padding }), className)} {...props}>
       {loading ? (
         <div className="space-y-3">
-          <div className="h-4 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6" />
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-4/6" />
+          <div className="h-4 bg-cemento-200 rounded animate-pulse" />
+          <div className="h-4 bg-cemento-200 rounded animate-pulse w-5/6" />
+          <div className="h-4 bg-cemento-200 rounded animate-pulse w-4/6" />
         </div>
       ) : (
         children
@@ -60,9 +60,9 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function CardHeader({ title, subtitle, className, children, ...props }: CardHeaderProps) {
   return (
-    <div className={cn('px-6 py-4 border-b border-gray-200', className)} {...props}>
-      {title && <h3 className="text-lg font-semibold text-gray-900">{title}</h3>}
-      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+    <div className={cn('px-6 py-4 border-b border-piedra-200', className)} {...props}>
+      {title && <h3 className="text-lg font-semibold text-cemento-900">{title}</h3>}
+      {subtitle && <p className="text-sm text-cemento-500 mt-1">{subtitle}</p>}
       {children}
     </div>
   );
@@ -82,7 +82,7 @@ export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function CardFooter({ className, children, ...props }: CardFooterProps) {
   return (
-    <div className={cn('px-6 py-4 border-t border-gray-200 bg-gray-50', className)} {...props}>
+    <div className={cn('px-6 py-4 border-t border-piedra-200 bg-cemento-50', className)} {...props}>
       {children}
     </div>
   );

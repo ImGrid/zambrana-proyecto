@@ -75,8 +75,8 @@ export const ConductoresPage = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Conductores</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-cemento-900">Gestión de Conductores</h1>
+          <p className="text-sm text-cemento-500 mt-1">
             Administración de conductores y sus licencias
           </p>
         </div>
@@ -110,22 +110,24 @@ export const ConductoresPage = () => {
         </div>
       </div>
 
+      {data && totalPages > 1 && (
+        <div className="mb-4">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={data.total}
+            itemsPerPage={limit}
+          />
+        </div>
+      )}
+
       <ConductoresTable
         conductores={conductoresFiltered}
         loading={isLoading}
         onEdit={handleOpenEdit}
         onToggleActivo={handleToggleActivo}
       />
-
-      {data && totalPages > 1 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalItems={data.total}
-          itemsPerPage={limit}
-        />
-      )}
 
       <ConductorForm
         isOpen={isFormOpen}

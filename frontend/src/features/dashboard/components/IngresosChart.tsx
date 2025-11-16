@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { DashboardMetrica } from '../types/dashboard.types';
+import { CHART_COLORS, GRID_STYLE, AXIS_STYLE, TOOLTIP_STYLE } from '@/config/chart-colors';
 
 interface IngresosChartProps {
   metricas: DashboardMetrica[];
@@ -24,42 +25,37 @@ export const IngresosChart = ({ metricas }: IngresosChartProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-lg border border-piedra-200 p-6">
+      <h3 className="text-lg font-semibold text-cemento-900 mb-4">
         Ingresos Diarios
       </h3>
       <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={data}>
           <defs>
             <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              <stop offset="5%" stopColor={CHART_COLORS.info} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={CHART_COLORS.info} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid {...GRID_STYLE} />
           <XAxis
             dataKey="fecha"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#e5e7eb' }}
+            tick={AXIS_STYLE.tick}
+            tickLine={AXIS_STYLE.tickLine}
           />
           <YAxis
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            tickLine={{ stroke: '#e5e7eb' }}
+            tick={AXIS_STYLE.tick}
+            tickLine={AXIS_STYLE.tickLine}
             tickFormatter={formatCurrency}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem'
-            }}
+            contentStyle={TOOLTIP_STYLE}
             formatter={(value: number) => [formatCurrency(value), 'Ingresos']}
           />
           <Area
             type="monotone"
             dataKey="ingresos"
-            stroke="#3b82f6"
+            stroke={CHART_COLORS.info}
             strokeWidth={2}
             fill="url(#colorIngresos)"
           />

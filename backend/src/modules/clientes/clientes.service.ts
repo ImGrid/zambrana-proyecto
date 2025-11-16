@@ -8,10 +8,6 @@ interface Cliente {
   razon_social: string;
   nit: string | null;
   telefono: string | null;
-  direccion: string | null;
-  latitud: number | null;
-  longitud: number | null;
-  referencia_ubicacion: string | null;
   created_at: string;
   updated_at: string;
   usuario_email: string | null;
@@ -25,7 +21,6 @@ interface ListClientesResult {
     razon_social: string;
     nit: string | null;
     telefono: string | null;
-    direccion: string | null;
     tipo_cliente_nombre: string;
   }>;
   total?: number;
@@ -94,10 +89,6 @@ export async function getClienteById(id: number): Promise<GetClienteResult> {
         razon_social: cliente.razon_social,
         nit: cliente.nit,
         telefono: cliente.telefono,
-        direccion: cliente.direccion,
-        latitud: cliente.latitud !== null ? Number(cliente.latitud) : null,
-        longitud: cliente.longitud !== null ? Number(cliente.longitud) : null,
-        referencia_ubicacion: cliente.referencia_ubicacion,
         created_at: cliente.created_at.toISOString(),
         updated_at: cliente.updated_at.toISOString(),
         usuario_email: cliente.usuario_email || null,
@@ -119,10 +110,6 @@ export async function createCliente(data: {
   tipo_cliente_id: number;
   nit?: string;
   telefono?: string;
-  direccion?: string;
-  latitud?: number;
-  longitud?: number;
-  referencia_ubicacion?: string;
 }): Promise<UpdateClienteResult> {
   try {
     // Verificar que el NIT no exista si se proporciona
@@ -134,15 +121,6 @@ export async function createCliente(data: {
           message: 'El NIT ya está registrado'
         };
       }
-    }
-
-    // Validar coordenadas si se proporcionan
-    if ((data.latitud !== undefined && data.longitud === undefined) ||
-        (data.latitud === undefined && data.longitud !== undefined)) {
-      return {
-        success: false,
-        message: 'Debe proporcionar ambas coordenadas (latitud y longitud) o ninguna'
-      };
     }
 
     // Crear cliente
@@ -160,10 +138,6 @@ export async function createCliente(data: {
         razon_social: clienteCreado.razon_social,
         nit: clienteCreado.nit,
         telefono: clienteCreado.telefono,
-        direccion: clienteCreado.direccion,
-        latitud: clienteCreado.latitud !== null ? Number(clienteCreado.latitud) : null,
-        longitud: clienteCreado.longitud !== null ? Number(clienteCreado.longitud) : null,
-        referencia_ubicacion: clienteCreado.referencia_ubicacion,
         created_at: clienteCreado.created_at.toISOString(),
         updated_at: clienteCreado.updated_at.toISOString(),
         usuario_email: clienteCreado.usuario_email || null,
@@ -187,10 +161,6 @@ export async function updateCliente(
     razon_social?: string;
     nit?: string;
     telefono?: string;
-    direccion?: string;
-    latitud?: number;
-    longitud?: number;
-    referencia_ubicacion?: string;
     tipo_cliente_id?: number;
   }
 ): Promise<UpdateClienteResult> {
@@ -211,17 +181,6 @@ export async function updateCliente(
         return {
           success: false,
           message: 'El NIT ya está registrado en otro cliente'
-        };
-      }
-    }
-
-    // Validar coordenadas si se proporcionan
-    if (data.latitud !== undefined && data.longitud !== undefined) {
-      if ((data.latitud === null && data.longitud !== null) ||
-          (data.latitud !== null && data.longitud === null)) {
-        return {
-          success: false,
-          message: 'Debe proporcionar ambas coordenadas (latitud y longitud) o ninguna'
         };
       }
     }
@@ -248,10 +207,6 @@ export async function updateCliente(
         razon_social: clienteActualizado.razon_social,
         nit: clienteActualizado.nit,
         telefono: clienteActualizado.telefono,
-        direccion: clienteActualizado.direccion,
-        latitud: clienteActualizado.latitud !== null ? Number(clienteActualizado.latitud) : null,
-        longitud: clienteActualizado.longitud !== null ? Number(clienteActualizado.longitud) : null,
-        referencia_ubicacion: clienteActualizado.referencia_ubicacion,
         created_at: clienteActualizado.created_at.toISOString(),
         updated_at: clienteActualizado.updated_at.toISOString(),
         usuario_email: clienteActualizado.usuario_email || null,
@@ -292,10 +247,6 @@ export async function updateClienteProfile(
     razon_social?: string;
     nit?: string;
     telefono?: string;
-    direccion?: string;
-    latitud?: number;
-    longitud?: number;
-    referencia_ubicacion?: string;
     tipo_cliente_id?: number;
   }
 ): Promise<UpdateClienteResult> {
@@ -317,17 +268,6 @@ export async function updateClienteProfile(
         return {
           success: false,
           message: 'El NIT ya está registrado en otro cliente'
-        };
-      }
-    }
-
-    // Validar coordenadas si se proporcionan
-    if (data.latitud !== undefined && data.longitud !== undefined) {
-      if ((data.latitud === null && data.longitud !== null) ||
-          (data.latitud !== null && data.longitud === null)) {
-        return {
-          success: false,
-          message: 'Debe proporcionar ambas coordenadas (latitud y longitud) o ninguna'
         };
       }
     }
@@ -354,10 +294,6 @@ export async function updateClienteProfile(
         razon_social: clienteActualizado.razon_social,
         nit: clienteActualizado.nit,
         telefono: clienteActualizado.telefono,
-        direccion: clienteActualizado.direccion,
-        latitud: clienteActualizado.latitud !== null ? Number(clienteActualizado.latitud) : null,
-        longitud: clienteActualizado.longitud !== null ? Number(clienteActualizado.longitud) : null,
-        referencia_ubicacion: clienteActualizado.referencia_ubicacion,
         created_at: clienteActualizado.created_at.toISOString(),
         updated_at: clienteActualizado.updated_at.toISOString(),
         usuario_email: clienteActualizado.usuario_email || null,
@@ -367,6 +303,42 @@ export async function updateClienteProfile(
     };
   } catch (error) {
     console.error('Error al actualizar perfil del cliente:', error);
+    return {
+      success: false,
+      message: 'Error interno del servidor'
+    };
+  }
+}
+
+// Obtener perfil del cliente autenticado
+export async function getClienteProfile(usuarioId: number): Promise<GetClienteResult> {
+  try {
+    const cliente = await clientesRepo.findClienteByUsuarioId(usuarioId);
+
+    if (!cliente) {
+      return {
+        success: false,
+        message: 'No se encontró un perfil de cliente asociado a este usuario'
+      };
+    }
+
+    return {
+      success: true,
+      cliente: {
+        id: cliente.id,
+        usuario_id: cliente.usuario_id,
+        tipo_cliente_id: cliente.tipo_cliente_id,
+        razon_social: cliente.razon_social,
+        nit: cliente.nit,
+        telefono: cliente.telefono,
+        created_at: cliente.created_at.toISOString(),
+        updated_at: cliente.updated_at.toISOString(),
+        usuario_email: cliente.usuario_email || null,
+        tipo_cliente_nombre: cliente.tipo_cliente_nombre || ''
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener perfil del cliente:', error);
     return {
       success: false,
       message: 'Error interno del servidor'

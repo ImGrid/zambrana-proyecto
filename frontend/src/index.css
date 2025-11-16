@@ -1,12 +1,190 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme {
+  /* ============================================
+     PALETA DE COLORES - AGREGADOS ZAMBRANA
+     Inspirada en materiales de construcción
+     ============================================ */
+
+  /* -------------------------------------------
+     1. CORAL (Color Principal del Logo)
+     Uso: Botones primarios, links, acciones principales
+     ------------------------------------------- */
+  --color-coral-50: #fff5f1;
+  --color-coral-100: #ffe8dc;
+  --color-coral-200: #ffd0b9;
+  --color-coral-300: #ffae8b;
+  --color-coral-400: #ff825b;
+  --color-coral-500: #ff6b35;
+  --color-coral-600: #f0481a;
+  --color-coral-700: #ca3610;
+  --color-coral-800: #a12d11;
+  --color-coral-900: #842a15;
+  --color-coral-950: #481107;
+
+  /* -------------------------------------------
+     2. TIERRA (Beige/Marrón del Logo)
+     Uso: Sección de materiales, backgrounds alternos, calidez
+     ------------------------------------------- */
+  --color-tierra-50: #faf8f5;
+  --color-tierra-100: #f5f0e8;
+  --color-tierra-200: #ebe0cc;
+  --color-tierra-300: #ddc9a4;
+  --color-tierra-400: #d4a574;
+  --color-tierra-500: #c89560;
+  --color-tierra-600: #b8834e;
+  --color-tierra-700: #976a42;
+  --color-tierra-800: #7b573a;
+  --color-tierra-900: #654933;
+  --color-tierra-950: #36261a;
+
+  /* -------------------------------------------
+     3. PIEDRA (Gris de Agregados del Logo)
+     Uso: Elementos secundarios, iconos, borders sutiles
+     ------------------------------------------- */
+  --color-piedra-50: #f6f6f6;
+  --color-piedra-100: #e7e7e7;
+  --color-piedra-200: #d1d1d1;
+  --color-piedra-300: #b0b0b0;
+  --color-piedra-400: #a8a8a8;
+  --color-piedra-500: #888888;
+  --color-piedra-600: #6d6d6d;
+  --color-piedra-700: #5d5d5d;
+  --color-piedra-800: #4f4f4f;
+  --color-piedra-900: #454545;
+  --color-piedra-950: #262626;
+
+  /* -------------------------------------------
+     4. CEMENTO (Gris Cálido Profesional)
+     Uso: Navegación, footers, elementos estructurales
+     ------------------------------------------- */
+  --color-cemento-50: #f7f7f6;
+  --color-cemento-100: #e9e9e7;
+  --color-cemento-200: #d6d5d1;
+  --color-cemento-300: #b8b6af;
+  --color-cemento-400: #99968b;
+  --color-cemento-500: #7f7c72;
+  --color-cemento-600: #6a6760;
+  --color-cemento-700: #56544e;
+  --color-cemento-800: #474543;
+  --color-cemento-900: #3d3c3a;
+  --color-cemento-950: #262523;
+
+  /* -------------------------------------------
+     5. ARENA (Amarillo/Beige Claro)
+     Uso: Highlights suaves, notificaciones informativas, calidez
+     ------------------------------------------- */
+  --color-arena-50: #fefce8;
+  --color-arena-100: #fef9c3;
+  --color-arena-200: #fef08a;
+  --color-arena-300: #fde047;
+  --color-arena-400: #facc15;
+  --color-arena-500: #eab308;
+  --color-arena-600: #ca8a04;
+  --color-arena-700: #a16207;
+  --color-arena-800: #854d0e;
+  --color-arena-900: #713f12;
+  --color-arena-950: #422006;
+
+  /* -------------------------------------------
+     6. ARCILLA (Rojo Terracota)
+     Uso: Alertas importantes, elementos destacados, construcción
+     ------------------------------------------- */
+  --color-arcilla-50: #fef2f2;
+  --color-arcilla-100: #fee2e2;
+  --color-arcilla-200: #fecaca;
+  --color-arcilla-300: #fca5a5;
+  --color-arcilla-400: #f87171;
+  --color-arcilla-500: #dc2626;
+  --color-arcilla-600: #b91c1c;
+  --color-arcilla-700: #991b1b;
+  --color-arcilla-800: #7f1d1d;
+  --color-arcilla-900: #701a1a;
+  --color-arcilla-950: #450a0a;
+
+  /* -------------------------------------------
+     COLORES SEMÁNTICOS
+     Estados del sistema
+     ------------------------------------------- */
+
+  /* Success / Completado */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+
+  /* Error / Peligro */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+  --color-error-950: #450a0a;
+
+  /* Warning / Advertencia */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+
+  /* Info / Información */
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
+  --color-info-300: #93c5fd;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+  --color-info-800: #1e40af;
+  --color-info-900: #1e3a8a;
+  --color-info-950: #172554;
+
+  /* -------------------------------------------
+     ALIAS SEMÁNTICOS (Para fácil migración)
+     ------------------------------------------- */
+  --color-primary-50: var(--color-coral-50);
+  --color-primary-100: var(--color-coral-100);
+  --color-primary-200: var(--color-coral-200);
+  --color-primary-300: var(--color-coral-300);
+  --color-primary-400: var(--color-coral-400);
+  --color-primary-500: var(--color-coral-500);
+  --color-primary-600: var(--color-coral-600);
+  --color-primary-700: var(--color-coral-700);
+  --color-primary-800: var(--color-coral-800);
+  --color-primary-900: var(--color-coral-900);
+  --color-primary-950: var(--color-coral-950);
+}
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #root {

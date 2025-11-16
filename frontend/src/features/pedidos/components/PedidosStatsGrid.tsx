@@ -37,28 +37,28 @@ export const PedidosStatsGrid = ({ dias = 30 }: PedidosStatsGridProps) => {
       value: stats.total_pedidos,
       icon: <ShoppingCartIcon className="h-6 w-6" />,
       subtitle: `${stats.pedidos_pendientes} pendientes`,
-      colorClass: 'text-orange-500'
+      colorClass: 'text-coral-500'
     },
     {
       title: 'Pedidos Activos',
       value: stats.pedidos_confirmados + stats.pedidos_en_camino,
       icon: <TruckIcon className="h-6 w-6" />,
       subtitle: `${stats.pedidos_en_camino} en ruta`,
-      colorClass: 'text-blue-500'
+      colorClass: 'text-info-500'
     },
     {
       title: 'Tasa de Entrega',
       value: `${tasaEntrega}%`,
       icon: <CheckCircleIcon className="h-6 w-6" />,
       subtitle: `${stats.pedidos_entregados} entregados`,
-      colorClass: 'text-green-500'
+      colorClass: 'text-success-500'
     },
     {
       title: `Ingresos (${dias}d)`,
       value: formatCurrency(stats.monto_total_mes),
       icon: <ClockIcon className="h-6 w-6" />,
       subtitle: `${stats.volumen_total_mes_m3} m³ totales`,
-      colorClass: 'text-purple-500'
+      colorClass: 'text-tierra-500'
     }
   ];
 

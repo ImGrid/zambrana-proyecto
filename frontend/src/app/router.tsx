@@ -15,8 +15,12 @@ import { MaterialesPage } from '@/features/materiales/routes/MaterialesPage';
 import { ClientesPage } from '@/features/clientes/routes/ClientesPage';
 import { CamionesPage } from '@/features/camiones/routes/CamionesPage';
 import { ConductoresPage } from '@/features/conductores/routes/ConductoresPage';
+import { UsuariosPage } from '@/features/usuarios/routes/UsuariosPage';
 import { EntregasPage } from '@/features/entregas/routes/EntregasPage';
+import { MonitorGPSPage } from '@/features/entregas/routes/MonitorGPSPage';
 import { MisPedidosPage } from '@/features/cliente/routes/MisPedidosPage';
+import { PerfilPage } from '@/features/cliente/routes/PerfilPage';
+import { TrackingEntregaPage } from '@/features/cliente/routes/TrackingEntregaPage';
 import { ROUTES } from '@/config/routes.config';
 
 export const router = createBrowserRouter([
@@ -109,6 +113,26 @@ export const router = createBrowserRouter([
             ],
           },
           {
+            path: ROUTES.MONITOR_GPS.path,
+            element: <ProtectedRoute allowedRoles={ROUTES.MONITOR_GPS.allowedRoles} />,
+            children: [
+              {
+                index: true,
+                element: <MonitorGPSPage />,
+              },
+            ],
+          },
+          {
+            path: ROUTES.USUARIOS.path,
+            element: <ProtectedRoute allowedRoles={ROUTES.USUARIOS.allowedRoles} />,
+            children: [
+              {
+                index: true,
+                element: <UsuariosPage />,
+              },
+            ],
+          },
+          {
             path: ROUTES.ENTREGAS.path,
             element: <ProtectedRoute allowedRoles={ROUTES.ENTREGAS.allowedRoles} />,
             children: [
@@ -153,6 +177,26 @@ export const router = createBrowserRouter([
               },
             ],
           },
+          {
+            path: ROUTES.PERFIL_CLIENTE.path,
+            element: <ProtectedRoute allowedRoles={ROUTES.PERFIL_CLIENTE.allowedRoles} />,
+            children: [
+              {
+                index: true,
+                element: <PerfilPage />,
+              },
+            ],
+          },
+          {
+            path: '/cliente/tracking/:pedidoId',
+            element: <ProtectedRoute allowedRoles={['cliente']} />,
+            children: [
+              {
+                index: true,
+                element: <TrackingEntregaPage />,
+              },
+            ],
+          },
         ],
       },
     ],
@@ -160,11 +204,11 @@ export const router = createBrowserRouter([
   {
     path: '*',
     element: (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-cemento-50">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
-          <p className="text-gray-600 mb-6">Página no encontrada</p>
-          <a href="/" className="text-orange-500 hover:text-orange-600 font-medium">
+          <h1 className="text-4xl font-bold text-cemento-900 mb-4">404</h1>
+          <p className="text-cemento-600 mb-6">Página no encontrada</p>
+          <a href="/" className="text-coral-500 hover:text-coral-600 font-medium">
             Volver al inicio
           </a>
         </div>

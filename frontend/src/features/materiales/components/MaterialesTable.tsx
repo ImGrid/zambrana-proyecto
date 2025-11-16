@@ -30,7 +30,7 @@ export const MaterialesTable = ({ materiales, loading, onUpdatePrecio, onAjustar
     {
       header: 'Precio/m³',
       accessor: (row) => (
-        <span className="text-gray-900 font-medium">
+        <span className="text-cemento-900 font-medium">
           Bs. {row.precio_m3.toFixed(2)}
         </span>
       ),
@@ -41,10 +41,10 @@ export const MaterialesTable = ({ materiales, loading, onUpdatePrecio, onAjustar
         const isLow = row.stock_actual < row.stock_minimo;
         return (
           <div className="flex items-center gap-2">
-            <span className={isLow ? 'text-red-600 font-semibold' : 'text-gray-900'}>
+            <span className={isLow ? 'text-error-600 font-semibold' : 'text-cemento-900'}>
               {row.stock_actual.toFixed(2)}
             </span>
-            <span className="text-gray-400 text-xs">
+            <span className="text-cemento-400 text-xs">
               / {row.stock_minimo.toFixed(2)}
             </span>
             {isLow && (
@@ -85,7 +85,7 @@ export const MaterialesTable = ({ materiales, loading, onUpdatePrecio, onAjustar
             <Package size={16} />
           </Button>
           <Button
-            variant={row.activo ? 'error' : 'success'}
+            variant={row.activo ? 'danger' : 'success'}
             size="sm"
             onClick={() => onToggleActivo?.(row.id)}
             title={row.activo ? 'Desactivar' : 'Activar'}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useDashboard } from '../hooks/useDashboard';
+import { useDashboard, useRefreshDashboard } from '../hooks/useDashboard';
 import { MetricsGrid } from '../components/MetricsGrid';
 import { OperationalStatsGrid } from '../components/OperationalStatsGrid';
 import { PedidosChart } from '../components/PedidosChart';
@@ -9,11 +10,13 @@ import { EstadosChart } from '../components/EstadosChart';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/Button';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
   const [dias, setDias] = useState(30);
   const { data, isLoading, error } = useDashboard({ dias });
+  const { mutate: refreshViews, isPending: isRefreshing } = useRefreshDashboard();
 
   const periodos = [
     { value: 7, label: '7 días' },
@@ -25,8 +28,8 @@ export const DashboardPage = () => {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-cemento-900">Dashboard</h1>
+          <p className="text-sm text-cemento-500 mt-1">
             Bienvenido, {user?.nombre}
           </p>
         </div>
@@ -38,13 +41,25 @@ export const DashboardPage = () => {
               onClick={() => setDias(periodo.value)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 dias === periodo.value
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-coral-500 text-white'
+                  : 'bg-white text-cemento-700 border border-piedra-300 hover:bg-cemento-50'
               }`}
             >
               {periodo.label}
             </button>
           ))}
+
+          {(user?.rol === 'admin' || user?.rol === 'gerente') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshViews()}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Actualizando...' : 'Actualizar Datos'}
+            </Button>
+          )}
         </div>
       </div>
 

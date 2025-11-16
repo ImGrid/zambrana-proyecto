@@ -25,6 +25,13 @@ interface ConfirmarPedidoModalProps {
   pedido: PedidoListItem;
 }
 
+// Convierte datetime-local YYYY-MM-DDTHH:MM a formato ISO YYYY-MM-DDTHH:MM:SSZ
+function convertirDatetimeLocalAISO(datetime: string): string {
+  if (!datetime) return '';
+  // Agregar segundos :00 y timezone Z (UTC)
+  return `${datetime}:00Z`;
+}
+
 export function ConfirmarPedidoModal({ open, onClose, pedido }: ConfirmarPedidoModalProps) {
   const { data: camionesData, isLoading: loadingCamiones } = useCamionesDisponibles();
   const { data: conductoresData, isLoading: loadingConductores } = useConductoresActivos();
@@ -46,7 +53,9 @@ export function ConfirmarPedidoModal({ open, onClose, pedido }: ConfirmarPedidoM
         data: {
           camion_id: data.camion_id,
           conductor_id: data.conductor_id,
-          fecha_entrega_estimada: data.fecha_entrega_estimada || undefined,
+          fecha_entrega_estimada: data.fecha_entrega_estimada
+            ? convertirDatetimeLocalAISO(data.fecha_entrega_estimada)
+            : undefined,
           observaciones: data.observaciones || undefined,
         },
       },
@@ -92,22 +101,22 @@ export function ConfirmarPedidoModal({ open, onClose, pedido }: ConfirmarPedidoM
       }
     >
       <form className="space-y-4">
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+        <div className="bg-cemento-50 rounded-lg p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Cliente:</span>
-            <span className="font-medium text-gray-900">{pedido.cliente_razon_social}</span>
+            <span className="text-cemento-600">Cliente:</span>
+            <span className="font-medium text-cemento-900">{pedido.cliente_razon_social}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Monto total:</span>
-            <span className="font-medium text-gray-900">Bs. {pedido.monto_total.toFixed(2)}</span>
+            <span className="text-cemento-600">Monto total:</span>
+            <span className="font-medium text-cemento-900">Bs. {pedido.monto_total.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total m³:</span>
-            <span className="font-medium text-gray-900">{pedido.total_m3.toFixed(2)} m³</span>
+            <span className="text-cemento-600">Total m³:</span>
+            <span className="font-medium text-cemento-900">{pedido.total_m3.toFixed(2)} m³</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Dirección:</span>
-            <span className="font-medium text-gray-900 text-right flex-1 ml-4">
+            <span className="text-cemento-600">Dirección:</span>
+            <span className="font-medium text-cemento-900 text-right flex-1 ml-4">
               {pedido.direccion_entrega}
             </span>
           </div>
@@ -148,18 +157,18 @@ export function ConfirmarPedidoModal({ open, onClose, pedido }: ConfirmarPedidoM
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-cemento-700 mb-1">
             Observaciones (opcional)
           </label>
           <textarea
             {...register('observaciones')}
             rows={3}
             disabled={isPending}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-piedra-300 rounded-md shadow-sm focus:ring-coral-500 focus:border-coral-500 disabled:bg-cemento-100 disabled:cursor-not-allowed"
             placeholder="Agregar notas adicionales..."
           />
           {errors.observaciones && (
-            <p className="mt-1 text-sm text-red-600">{errors.observaciones.message}</p>
+            <p className="mt-1 text-sm text-error-600">{errors.observaciones.message}</p>
           )}
         </div>
       </form>

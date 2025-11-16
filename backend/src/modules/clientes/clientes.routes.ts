@@ -17,17 +17,18 @@ import {
   createCliente,
   updateCliente,
   updateClienteProfile,
+  getClienteProfile,
   getEstadisticas
 } from './clientes.service.js';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
-  // GET /clientes - Listar clientes (todos los usuarios autenticados)
+  // GET /clientes - Listar clientes (admin o gerente)
   fastify.route({
     method: 'GET',
     url: '/',
-    onRequest: [fastify.authenticate],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
       description: 'Listar todos los clientes',
       tags: ['clientes'],
@@ -35,6 +36,7 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
       response: {
         200: clientesListResponseSchema,
         401: errorResponseSchema,
+        403: errorResponseSchema,
         500: errorResponseSchema
       }
     },
@@ -58,11 +60,11 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
     }
   });
 
-  // GET /clientes/:id - Obtener cliente por ID (todos los usuarios autenticados)
+  // GET /clientes/:id - Obtener cliente por ID (admin o gerente)
   fastify.route({
     method: 'GET',
     url: '/:id',
-    onRequest: [fastify.authenticate],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
     schema: {
       description: 'Obtener información detallada de un cliente',
       tags: ['clientes'],
@@ -70,6 +72,7 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
       response: {
         200: clienteResponseSchema,
         401: errorResponseSchema,
+        403: errorResponseSchema,
         404: errorResponseSchema,
         500: errorResponseSchema
       }
@@ -156,6 +159,47 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
         message: result.message || 'Cliente actualizado exitosamente',
         cliente: result.cliente
       };
+    }
+  });
+
+  // GET /clientes/me - Obtener perfil del cliente autenticado
+  fastify.route({
+    method: 'GET',
+    url: '/me',
+    onRequest: [fastify.authenticate],
+    schema: {
+      description: 'Obtener perfil del cliente autenticado (solo clientes)',
+      tags: ['clientes'],
+      response: {
+        200: clienteResponseSchema,
+        401: errorResponseSchema,
+        403: errorResponseSchema,
+        404: errorResponseSchema,
+        500: errorResponseSchema
+      }
+    },
+    handler: async (request, reply) => {
+      const user = request.user as { id: number; rol: string };
+
+      // Verificar que el usuario sea un cliente
+      if (user.rol !== 'cliente') {
+        return reply.code(403).send({
+          error: 'Acceso denegado',
+          message: 'Solo los clientes pueden acceder a este endpoint'
+        });
+      }
+
+      const result = await getClienteProfile(user.id);
+
+      if (!result.success || !result.cliente) {
+        const statusCode = result.message?.includes('no encontró') ? 404 : 500;
+        return reply.code(statusCode).send({
+          error: 'Error al obtener perfil',
+          message: result.message || 'No se pudo obtener el perfil'
+        });
+      }
+
+      return result.cliente;
     }
   });
 

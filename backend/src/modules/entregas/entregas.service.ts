@@ -19,9 +19,10 @@ import { pool } from '../../database/postgres/pool.js';
 export async function iniciarEntrega(pedido_id: number) {
   // Validar que el pedido existe y obtener el cliente_id
   const pedidoResult = await pool.query(
-    `SELECT id, numero_pedido, cliente_id, estado
-     FROM pedidos
-     WHERE id = $1`,
+    `SELECT p.id, p.codigo_seguimiento, p.cliente_id, e.nombre as estado
+     FROM pedidos p
+     JOIN estados_pedido e ON p.estado_actual_id = e.id
+     WHERE p.id = $1`,
     [pedido_id]
   );
 
@@ -32,23 +33,23 @@ export async function iniciarEntrega(pedido_id: number) {
   const pedido = pedidoResult.rows[0];
 
   if (pedido.estado !== 'CONFIRMADO') {
-    throw new Error(`Pedido ${pedido.numero_pedido} no esta confirmado (estado actual: ${pedido.estado})`);
+    throw new Error(`Pedido ${pedido.codigo_seguimiento} no esta confirmado (estado actual: ${pedido.estado})`);
   }
 
   // Verificar que no exista una entrega previa para este pedido
   const entregaExistente = await entregasRepo.findEntregaByPedidoId(pedido_id);
   if (entregaExistente) {
-    throw new Error(`El pedido ${pedido.numero_pedido} ya tiene una entrega asignada`);
+    throw new Error(`El pedido ${pedido.codigo_seguimiento} ya tiene una entrega asignada`);
   }
 
   // Calcular ruta desde planta hasta cliente usando Neo4j
-  const rutaCompleta = await rutasService.calcularRutaHastaCliente(pedido.cliente_id);
+  const rutaCompleta = await rutasService.calcularRutaHastaPedido(pedido_id);
 
   // Buscar camion disponible
   const camionResult = await pool.query(
     `SELECT id, placa, modelo
      FROM camiones
-     WHERE estado = 'DISPONIBLE'
+     WHERE activo = TRUE
      ORDER BY id
      LIMIT 1`
   );
@@ -63,7 +64,7 @@ export async function iniciarEntrega(pedido_id: number) {
   const conductorResult = await pool.query(
     `SELECT id, nombre_completo
      FROM conductores
-     WHERE estado = 'DISPONIBLE'
+     WHERE activo = TRUE
      ORDER BY id
      LIMIT 1`
   );
@@ -74,18 +75,15 @@ export async function iniciarEntrega(pedido_id: number) {
 
   const conductor = conductorResult.rows[0];
 
-  // Calcular hora estimada de llegada
-  const horaEstimada = new Date();
-  horaEstimada.setMinutes(horaEstimada.getMinutes() + Math.ceil(rutaCompleta.tiempo_estimado_minutos));
+  // Crear identificador de ruta planificada
+  const rutaPlanificadaId = `PLANTA->${rutaCompleta.interseccion_destino.id}`;
 
-  // Crear la entrega con toda la informacion
+  // Crear la entrega
   const entrega = await entregasRepo.createEntrega(
     pedido_id,
     camion.id,
     conductor.id,
-    rutaCompleta,
-    rutaCompleta.distancia_total_km,
-    horaEstimada
+    rutaPlanificadaId
   );
 
   // Retornar entrega con detalles completos
@@ -128,13 +126,15 @@ export async function recibirPosicionGPS(
     throw new Error(`Entrega con ID ${entrega_id} no encontrada`);
   }
 
-  if (entrega.estado !== 'EN_CAMINO') {
-    throw new Error(`La entrega no esta activa (estado actual: ${entrega.estado})`);
+  if (entrega.entregado === true || !entrega.hora_salida_planta) {
+    throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
   }
 
   // Insertar posicion GPS
   await gpsRepo.insertarPosicionGPS(
     entrega_id,
+    entrega.conductor_id,
+    entrega.camion_id,
     latitud,
     longitud,
     velocidad_kmh,
@@ -143,31 +143,17 @@ export async function recibirPosicionGPS(
     timestamp
   );
 
-  // Validaciones adicionales (no bloquean la insercion)
-  const warnings = [];
+  // Validaciones adicionales
+  const warnings: string[] = [];
 
-  // Validar si esta cerca de la ruta calculada
-  if (entrega.ruta_calculada && entrega.ruta_calculada.ruta_calculada) {
-    const estaCercaDeRuta = rutasService.validarPosicionCercaDeRuta(
-      latitud,
-      longitud,
-      entrega.ruta_calculada.ruta_calculada,
-      1.5 // tolerancia de 1.5 km
-    );
-
-    if (!estaCercaDeRuta) {
-      warnings.push('El camion se encuentra alejado de la ruta planificada');
-    }
-  }
-
-  // Calcular nuevo ETA
+  // Calcular nuevo ETA basado en posicion actual
   let nuevoETA = null;
-  if (entrega.ruta_calculada && entrega.ruta_calculada.cliente) {
+  if (entrega.pedido?.latitud_entrega && entrega.pedido?.longitud_entrega) {
     const tiempoRestante = rutasService.calcularTiempoEstimadoLlegada(
       latitud,
       longitud,
-      entrega.ruta_calculada.cliente.latitud,
-      entrega.ruta_calculada.cliente.longitud,
+      entrega.pedido.latitud_entrega,
+      entrega.pedido.longitud_entrega,
       velocidad_kmh || 40
     );
 
@@ -215,13 +201,31 @@ export async function finalizarEntrega(
     throw new Error(`Entrega con ID ${entrega_id} no encontrada`);
   }
 
-  if (entrega.estado !== 'EN_CAMINO') {
-    throw new Error(`La entrega no esta activa (estado actual: ${entrega.estado})`);
+  if (entrega.entregado === true || !entrega.hora_salida_planta) {
+    throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
   }
 
   // Calcular metricas finales
   const distanciaRecorrida = await gpsRepo.calcularDistanciaRecorrida(entrega_id);
   const totalPosicionesGPS = await gpsRepo.contarPosicionesEntrega(entrega_id);
+
+  // Recalcular ruta planificada para obtener metricas
+  let distanciaPlanificada = null;
+  let tiempoEstimado = null;
+  let desviacionRuta = null;
+
+  try {
+    const rutaPlanificada = await rutasService.calcularRutaHastaPedido(entrega.pedido.id);
+    distanciaPlanificada = rutaPlanificada.distancia_total_km;
+    tiempoEstimado = rutaPlanificada.tiempo_estimado_minutos;
+
+    // Calcular desviacion de ruta
+    if (distanciaPlanificada && distanciaRecorrida > 0) {
+      desviacionRuta = rutasService.calcularDesviacionRuta(distanciaRecorrida, distanciaPlanificada);
+    }
+  } catch (error) {
+    // Si falla el calculo de ruta, continuar sin metricas de ruta
+  }
 
   // Finalizar entrega en BD
   const entregaFinalizada = await entregasRepo.finalizarEntrega(
@@ -232,25 +236,17 @@ export async function finalizarEntrega(
   );
 
   // Calcular tiempo real de entrega
-  const tiempoRealMinutos = entrega.hora_salida && entregaFinalizada.hora_llegada_real
-    ? Math.round((entregaFinalizada.hora_llegada_real.getTime() - entrega.hora_salida.getTime()) / (1000 * 60))
+  const tiempoRealMinutos = entrega.hora_salida_planta && entregaFinalizada.hora_llegada_cliente
+    ? Math.round((entregaFinalizada.hora_llegada_cliente.getTime() - entrega.hora_salida_planta.getTime()) / (1000 * 60))
     : null;
-
-  // Calcular desviacion de ruta si hay datos
-  let desviacionRuta = null;
-  if (entrega.distancia_km && distanciaRecorrida > 0) {
-    desviacionRuta = rutasService.calcularDesviacionRuta(distanciaRecorrida, entrega.distancia_km);
-  }
 
   return {
     entrega: entregaFinalizada,
     metricas: {
-      distancia_planificada_km: entrega.distancia_km,
+      distancia_planificada_km: distanciaPlanificada,
       distancia_recorrida_km: distanciaRecorrida,
       desviacion_ruta_porcentaje: desviacionRuta ? (desviacionRuta * 100).toFixed(1) : null,
-      tiempo_estimado_minutos: entrega.hora_llegada_estimada && entrega.hora_salida
-        ? Math.round((entrega.hora_llegada_estimada.getTime() - entrega.hora_salida.getTime()) / (1000 * 60))
-        : null,
+      tiempo_estimado_minutos: tiempoEstimado,
       tiempo_real_minutos: tiempoRealMinutos,
       total_posiciones_gps_registradas: totalPosicionesGPS
     }
@@ -282,13 +278,13 @@ export async function obtenerEstadoEntrega(entrega_id: number) {
   const estaDetenido = rutasService.estaDetenido(velocidadPromedio);
 
   // Calcular ETA actualizado si esta en camino
-  let etaActualizado = entrega.hora_llegada_estimada;
-  if (entrega.estado === 'EN_CAMINO' && ultimaPosicion && entrega.ruta_calculada?.cliente) {
+  let etaActualizado = null;
+  if (entrega.entregado === false && entrega.hora_salida_planta && ultimaPosicion && entrega.pedido?.latitud_entrega && entrega.pedido?.longitud_entrega) {
     const tiempoRestante = rutasService.calcularTiempoEstimadoLlegada(
       ultimaPosicion.latitud,
       ultimaPosicion.longitud,
-      entrega.ruta_calculada.cliente.latitud,
-      entrega.ruta_calculada.cliente.longitud,
+      entrega.pedido.latitud_entrega,
+      entrega.pedido.longitud_entrega,
       velocidadPromedio > 0 ? velocidadPromedio : 40
     );
 
@@ -332,7 +328,7 @@ export async function obtenerHistorialTracking(
   return {
     entrega: {
       id: entrega.id,
-      estado: entrega.estado,
+      entregado: entrega.entregado,
       pedido: entrega.pedido,
       camion: entrega.camion,
       conductor: entrega.conductor
@@ -394,7 +390,7 @@ export async function obtenerEventosEntrega(entrega_id: number) {
   return {
     entrega: {
       id: entrega.id,
-      estado: entrega.estado,
+      entregado: entrega.entregado,
       pedido: entrega.pedido
     },
     eventos
@@ -420,8 +416,8 @@ export async function cancelarEntrega(entrega_id: number, motivo: string) {
     throw new Error(`Entrega con ID ${entrega_id} no encontrada`);
   }
 
-  if (entrega.estado !== 'EN_CAMINO') {
-    throw new Error(`La entrega no esta activa (estado actual: ${entrega.estado})`);
+  if (entrega.entregado === true || !entrega.hora_salida_planta) {
+    throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
   }
 
   const entregaCancelada = await entregasRepo.cancelarEntrega(entrega_id, motivo);

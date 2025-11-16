@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { useCreateConductor, useUpdateConductor } from '../hooks/useConductores';
+import { CategoriaLicencia, CATEGORIA_LICENCIA_LABELS } from '../types/conductores.types';
 import type { Conductor, CreateConductorData, UpdateConductorData } from '../types/conductores.types';
 
 interface ConductorFormProps {
@@ -115,12 +117,21 @@ export const ConductorForm = ({ isOpen, onClose, conductor }: ConductorFormProps
             placeholder="Ej: 77123456"
           />
 
-          <Input
-            label="Categoría de Licencia"
-            value={formData.licencia_categoria}
-            onChange={(e) => setFormData({ ...formData, licencia_categoria: e.target.value })}
-            placeholder="Ej: Profesional"
-          />
+          <div>
+            <label className="block text-sm font-medium text-cemento-700 mb-2">
+              Categoría de Licencia
+            </label>
+            <Select
+              value={formData.licencia_categoria}
+              onChange={(e) => setFormData({ ...formData, licencia_categoria: e.target.value })}
+            >
+              <option value="">Seleccionar categoría (opcional)</option>
+              <option value={CategoriaLicencia.A}>{CATEGORIA_LICENCIA_LABELS[CategoriaLicencia.A]}</option>
+              <option value={CategoriaLicencia.B}>{CATEGORIA_LICENCIA_LABELS[CategoriaLicencia.B]}</option>
+              <option value={CategoriaLicencia.C}>{CATEGORIA_LICENCIA_LABELS[CategoriaLicencia.C]}</option>
+              <option value={CategoriaLicencia.PROFESIONAL}>{CATEGORIA_LICENCIA_LABELS[CategoriaLicencia.PROFESIONAL]}</option>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

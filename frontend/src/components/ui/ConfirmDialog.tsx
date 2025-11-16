@@ -35,16 +35,16 @@ export function ConfirmDialog({
       <div className="flex flex-col items-center text-center">
         <div
           className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${
-            variant === 'danger' ? 'bg-red-100' : 'bg-yellow-100'
+            variant === 'danger' ? 'bg-error-100' : 'bg-arena-100'
           }`}
         >
           <ExclamationTriangleIcon
-            className={`h-6 w-6 ${variant === 'danger' ? 'text-red-600' : 'text-yellow-600'}`}
+            className={`h-6 w-6 ${variant === 'danger' ? 'text-error-600' : 'text-arena-600'}`}
             aria-hidden="true"
           />
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="mt-2 text-sm text-gray-500">{description}</p>
+        <h3 className="mt-4 text-lg font-semibold text-cemento-900">{title}</h3>
+        <p className="mt-2 text-sm text-cemento-500">{description}</p>
       </div>
 
       <div className="mt-6 flex gap-3">

@@ -51,10 +51,10 @@ export function CatalogoPage() {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-cemento-900 mb-2">
           Catálogo de Materiales
         </h1>
-        <p className="text-gray-600">
+        <p className="text-cemento-600">
           Explora nuestro catálogo de materiales de construcción disponibles
         </p>
       </div>
@@ -62,7 +62,7 @@ export function CatalogoPage() {
       {/* Search Bar */}
       <div className="mb-6">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cemento-400" />
           <Input
             type="text"
             placeholder="Buscar por nombre o código..."
@@ -123,7 +123,7 @@ export function CatalogoPage() {
             Ver Carrito
             <Badge
               variant="success"
-              className="absolute -top-2 -right-2 bg-green-500 text-white min-w-[24px] h-6 flex items-center justify-center"
+              className="absolute -top-2 -right-2 bg-success-500 text-white min-w-[24px] h-6 flex items-center justify-center"
             >
               {itemCount}
             </Badge>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Zambrana - Mapa de Entregas</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/png" href="../frontend/public/logo-icon-64.webp">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    /* Estilos adicionales para el mapa */
+    .leaflet-container {
+      font-family: inherit;
+    }
+
+    .custom-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker-planta {
+      width: 48px;
+      height: 48px;
+      background: #22c55e;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .marker-cliente {
+      width: 40px;
+      height: 40px;
+      background: #ef4444;
+      border-radius: 50% 50% 50% 0;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      transform: rotate(-45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker-cliente svg {
+      transform: rotate(45deg);
+      color: white;
+    }
+
+    .marker-camion {
+      width: 44px;
+      height: 44px;
+      background: #3b82f6;
+      border-radius: 12px;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .marker-camion.detenido {
+      background: #f59e0b;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+    }
+
+    .leaflet-popup-content {
+      margin: 12px;
+      font-size: 14px;
+    }
+
+    /* Ruta animada */
+    .route-line {
+      stroke-dasharray: 10, 10;
+      animation: dash 1s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -20;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <!-- Header -->
+    <header class="map-header">
+      <div class="map-header-left">
+        <img
+          src="../frontend/public/logo_origin.png"
+          alt="Zambrana"
+          class="map-header-logo"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23ff6b35%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%22 y=%2265%22 text-anchor=%22middle%22 font-size=%2250%22 fill=%22white%22>Z</text></svg>'"
+        >
+        <div>
+          <h1 class="map-header-title">Mi Ruta</h1>
+          <p class="map-header-subtitle" id="currentDate">Cargando...</p>
+        </div>
+      </div>
+      <div class="map-header-right">
+        <button class="header-icon-btn" onclick="centerOnLocation()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="3"></circle>
+            <line x1="12" y1="2" x2="12" y2="6"></line>
+            <line x1="12" y1="18" x2="12" y2="22"></line>
+            <line x1="2" y1="12" x2="6" y2="12"></line>
+            <line x1="18" y1="12" x2="22" y2="12"></line>
+          </svg>
+        </button>
+        <button class="header-icon-btn" onclick="showMenu()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- GPS Indicator -->
+    <div class="gps-indicator">
+      <span class="gps-dot active"></span>
+      <span id="gpsStatus">GPS Activo</span>
+    </div>
+
+    <!-- Speed Indicator -->
+    <div class="speed-indicator">
+      <div class="speed-value" id="currentSpeed">0</div>
+      <div class="speed-unit">km/h</div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-view">
+      <div id="map"></div>
+    </div>
+
+    <!-- Delivery Info Card -->
+    <div class="delivery-info-card slide-up" id="deliveryCard">
+      <div class="delivery-info-header">
+        <div class="delivery-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </div>
+        <div class="delivery-title">
+          <h3 id="clientName">Cliente: Constructora ABC</h3>
+          <p id="deliveryAddress">Av. America #1234, Cochabamba</p>
+        </div>
+        <span class="delivery-status status-pending" id="deliveryStatus">Pendiente</span>
+      </div>
+      <div class="delivery-details">
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <div class="detail-text">
+            <div class="detail-label">Distancia</div>
+            <div class="detail-value" id="distance">3.5 km</div>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <div class="detail-text">
+            <div class="detail-label">Tiempo est.</div>
+            <div class="detail-value" id="estimatedTime">12 min</div>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            </svg>
+          </div>
+          <div class="detail-text">
+            <div class="detail-label">Material</div>
+            <div class="detail-value" id="material">Arena Fina</div>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+          </div>
+          <div class="detail-text">
+            <div class="detail-label">Cantidad</div>
+            <div class="detail-value" id="quantity">5 m3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Panel -->
+    <div class="action-panel slide-up">
+      <div class="action-panel-header">
+        <div class="action-panel-handle"></div>
+      </div>
+      <div class="action-buttons">
+        <!-- Comenzar Ruta -->
+        <button class="action-btn btn-start-route" id="btnStartRoute" onclick="startRoute()">
+          <span class="action-btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </span>
+          <span id="startRouteText">Comenzar Ruta</span>
+        </button>
+
+        <!-- Pedido Entregado -->
+        <button class="action-btn btn-delivered" id="btnDelivered" onclick="markDelivered()" disabled style="opacity: 0.5;">
+          <span class="action-btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span>Pedido Entregado</span>
+        </button>
+
+        <!-- Detenido -->
+        <button class="action-btn btn-stopped" id="btnStopped" onclick="reportStopped()" disabled style="opacity: 0.5;">
+          <span class="action-btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="10" y1="15" x2="10" y2="9"></line>
+              <line x1="14" y1="15" x2="14" y2="9"></line>
+            </svg>
+          </span>
+          <span>Detenido</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Stop Reason Modal -->
+  <div class="modal-overlay hidden" id="stopModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Motivo de Detencion</h2>
+        <button class="modal-close" onclick="closeStopModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button class="action-btn action-btn-secondary" onclick="selectStopReason('Trafico')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-1.4-3.2a2 2 0 0 0-1.8-1.3H7.2a2 2 0 0 0-1.8 1.3L4 10l-2.5 1.1C.7 11.3 0 12.1 0 13v3c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle></svg>
+          Trafico
+        </button>
+        <button class="action-btn action-btn-secondary" onclick="selectStopReason('Problema mecanico')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          Problema mecanico
+        </button>
+        <button class="action-btn action-btn-secondary" onclick="selectStopReason('Descanso')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+          Descanso
+        </button>
+        <button class="action-btn action-btn-secondary" onclick="selectStopReason('Cliente no disponible')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
+          Cliente no disponible
+        </button>
+        <button class="action-btn action-btn-secondary" onclick="selectStopReason('Otro')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          Otro
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // State
+    let map;
+    let routeStarted = false;
+    let currentPosition = null;
+    let positionMarker = null;
+    let routeLine = null;
+    let routeCoords = [];
+
+    // Coordenadas de la planta Zambrana
+    const PLANTA_COORDS = [-17.39228, -66.27838];
+
+    // Coordenadas del cliente (ejemplo)
+    const CLIENTE_COORDS = [-17.3850, -66.2650];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      initDate();
+      initMap();
+      watchPosition();
+    });
+
+    // Set current date
+    function initDate() {
+      const date = new Date();
+      const options = { weekday: 'long', day: 'numeric', month: 'long' };
+      document.getElementById('currentDate').textContent = date.toLocaleDateString('es-ES', options);
+    }
+
+    // Initialize Leaflet map
+    function initMap() {
+      // Create map centered on Cochabamba
+      map = L.map('map', {
+        center: PLANTA_COORDS,
+        zoom: 14,
+        zoomControl: false
+      });
+
+      // Add tile layer (OpenStreetMap)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Add zoom control to bottom right
+      L.control.zoom({
+        position: 'bottomright'
+      }).addTo(map);
+
+      // Add plant marker
+      const plantIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-planta">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </div>`,
+        iconSize: [48, 48],
+        iconAnchor: [24, 24]
+      });
+
+      L.marker(PLANTA_COORDS, { icon: plantIcon })
+        .addTo(map)
+        .bindPopup('<strong>Planta Zambrana</strong><br>Punto de origen');
+
+      // Add client marker
+      const clientIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-cliente">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          </svg>
+        </div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40]
+      });
+
+      L.marker(CLIENTE_COORDS, { icon: clientIcon })
+        .addTo(map)
+        .bindPopup('<strong>Constructora ABC</strong><br>Av. America #1234');
+
+      // Draw route line (dashed)
+      routeLine = L.polyline([PLANTA_COORDS, CLIENTE_COORDS], {
+        color: '#0066FF',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+      }).addTo(map);
+
+      // Fit bounds to show both markers
+      map.fitBounds([PLANTA_COORDS, CLIENTE_COORDS], { padding: [50, 50] });
+    }
+
+    // Watch GPS position
+    function watchPosition() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(
+          function(position) {
+            const { latitude, longitude, speed } = position.coords;
+            currentPosition = [latitude, longitude];
+
+            // Update speed
+            const speedKmh = speed ? Math.round(speed * 3.6) : 0;
+            document.getElementById('currentSpeed').textContent = speedKmh;
+
+            // Update position marker
+            updatePositionMarker(currentPosition);
+
+            // Update GPS status
+            document.getElementById('gpsStatus').textContent = 'GPS Activo';
+
+            // If route started, track the route
+            if (routeStarted) {
+              routeCoords.push(currentPosition);
+              updateRouteTrace();
+            }
+          },
+          function(error) {
+            console.error('Error getting location:', error);
+            document.getElementById('gpsStatus').textContent = 'GPS Error';
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        document.getElementById('gpsStatus').textContent = 'GPS No disponible';
+      }
+    }
+
+    // Update position marker on map
+    function updatePositionMarker(coords) {
+      const truckIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-camion ${routeStarted ? '' : 'detenido'}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </div>`,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+      });
+
+      if (positionMarker) {
+        positionMarker.setLatLng(coords);
+        positionMarker.setIcon(truckIcon);
+      } else {
+        positionMarker = L.marker(coords, { icon: truckIcon }).addTo(map);
+      }
+    }
+
+    // Update route trace
+    function updateRouteTrace() {
+      if (routeCoords.length > 1) {
+        // Remove old trace line if exists
+        if (window.traceLine) {
+          map.removeLayer(window.traceLine);
+        }
+        // Draw new trace
+        window.traceLine = L.polyline(routeCoords, {
+          color: '#06b6d4',
+          weight: 6,
+          opacity: 0.9
+        }).addTo(map);
+      }
+    }
+
+    // Center map on current location
+    function centerOnLocation() {
+      if (currentPosition) {
+        map.setView(currentPosition, 16);
+        showToast('Ubicacion centrada', 'success');
+      } else {
+        showToast('Obteniendo ubicacion...', 'warning');
+        // Try to get location
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            currentPosition = [position.coords.latitude, position.coords.longitude];
+            map.setView(currentPosition, 16);
+            updatePositionMarker(currentPosition);
+          },
+          function(error) {
+            showToast('No se pudo obtener ubicacion', 'error');
+          }
+        );
+      }
+    }
+
+    // Start route
+    function startRoute() {
+      if (routeStarted) {
+        // Already started, this would be "pause" or something
+        return;
+      }
+
+      routeStarted = true;
+      routeCoords = currentPosition ? [currentPosition] : [PLANTA_COORDS];
+
+      // Update UI
+      const btn = document.getElementById('btnStartRoute');
+      btn.innerHTML = `
+        <span class="action-btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </span>
+        <span>Ruta en Progreso</span>
+      `;
+      btn.classList.remove('btn-start-route');
+      btn.classList.add('action-btn-secondary');
+      btn.style.opacity = '0.7';
+
+      // Enable other buttons
+      document.getElementById('btnDelivered').disabled = false;
+      document.getElementById('btnDelivered').style.opacity = '1';
+      document.getElementById('btnStopped').disabled = false;
+      document.getElementById('btnStopped').style.opacity = '1';
+
+      // Update status
+      document.getElementById('deliveryStatus').textContent = 'En Camino';
+      document.getElementById('deliveryStatus').className = 'delivery-status status-active';
+
+      showToast('Ruta iniciada', 'success');
+    }
+
+    // Mark as delivered
+    function markDelivered() {
+      if (!routeStarted) return;
+
+      // Update UI
+      document.getElementById('deliveryStatus').textContent = 'Entregado';
+      document.getElementById('deliveryStatus').className = 'delivery-status status-completed';
+
+      // Disable buttons
+      document.getElementById('btnDelivered').disabled = true;
+      document.getElementById('btnDelivered').style.opacity = '0.5';
+      document.getElementById('btnStopped').disabled = true;
+      document.getElementById('btnStopped').style.opacity = '0.5';
+
+      const startBtn = document.getElementById('btnStartRoute');
+      startBtn.innerHTML = `
+        <span class="action-btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span>Entrega Completada</span>
+      `;
+      startBtn.classList.remove('action-btn-secondary');
+      startBtn.classList.add('btn-delivered');
+      startBtn.style.opacity = '1';
+
+      showToast('Pedido marcado como entregado', 'success');
+    }
+
+    // Report stopped
+    function reportStopped() {
+      if (!routeStarted) return;
+      document.getElementById('stopModal').classList.remove('hidden');
+    }
+
+    // Close stop modal
+    function closeStopModal() {
+      document.getElementById('stopModal').classList.add('hidden');
+    }
+
+    // Select stop reason
+    function selectStopReason(reason) {
+      closeStopModal();
+
+      // Update status
+      document.getElementById('deliveryStatus').textContent = 'Detenido';
+      document.getElementById('deliveryStatus').className = 'delivery-status status-stopped';
+
+      // Update button
+      const stoppedBtn = document.getElementById('btnStopped');
+      stoppedBtn.innerHTML = `
+        <span class="action-btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </span>
+        <span>Reanudar</span>
+      `;
+      stoppedBtn.onclick = resumeRoute;
+
+      showToast('Estado: Detenido - ' + reason, 'warning');
+    }
+
+    // Resume route
+    function resumeRoute() {
+      document.getElementById('deliveryStatus').textContent = 'En Camino';
+      document.getElementById('deliveryStatus').className = 'delivery-status status-active';
+
+      const stoppedBtn = document.getElementById('btnStopped');
+      stoppedBtn.innerHTML = `
+        <span class="action-btn-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="10" y1="15" x2="10" y2="9"></line>
+            <line x1="14" y1="15" x2="14" y2="9"></line>
+          </svg>
+        </span>
+        <span>Detenido</span>
+      `;
+      stoppedBtn.onclick = reportStopped;
+
+      showToast('Ruta reanudada', 'success');
+    }
+
+    // Show menu (placeholder)
+    function showMenu() {
+      showToast('Menu en desarrollo', 'warning');
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${type === 'success' ? '<polyline points="20 6 9 17 4 12"></polyline>' :
+            type === 'error' ? '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>' :
+            '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'}
+        </svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#ff6b35">
+  <title>Zambrana - Vistas Moviles</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .index-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--coral-500) 0%, var(--coral-600) 100%);
+    }
+
+    .index-card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .index-logo {
+      width: 100px;
+      height: auto;
+      display: block;
+      margin: 0 auto 1.5rem;
+    }
+
+    .index-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--cemento-900);
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .index-subtitle {
+      font-size: 0.875rem;
+      color: var(--cemento-500);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .view-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .view-link {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--cemento-50);
+      border-radius: 14px;
+      text-decoration: none;
+      color: var(--cemento-900);
+      transition: all 0.2s ease;
+    }
+
+    .view-link:hover {
+      background: var(--coral-100);
+      transform: translateX(4px);
+    }
+
+    .view-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--coral-500);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .view-info h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .view-info p {
+      font-size: 0.75rem;
+      color: var(--cemento-500);
+    }
+
+    .view-arrow {
+      margin-left: auto;
+      color: var(--piedra-400);
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div class="index-container">
+    <div class="index-card">
+      <img
+        src="../frontend/public/logo_origin.png"
+        alt="Zambrana Logo"
+        class="index-logo"
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23ff6b35%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%22 y=%2265%22 text-anchor=%22middle%22 font-size=%2250%22 fill=%22white%22>Z</text></svg>'"
+      >
+      <h1 class="index-title">Vistas Moviles</h1>
+      <p class="index-subtitle">Prototipos de la aplicacion movil para conductores</p>
+
+      <div class="view-list">
+        <a href="login.html" class="view-link">
+          <div class="view-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="view-info">
+            <h3>Login</h3>
+            <p>Pantalla de inicio de sesion</p>
+          </div>
+          <div class="view-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+
+        <a href="mapa.html" class="view-link">
+          <div class="view-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+          </div>
+          <div class="view-info">
+            <h3>Mapa de Entregas</h3>
+            <p>Vista con mapa, GPS y acciones de entrega</p>
+          </div>
+          <div class="view-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <p class="footer-note">
+      Zambrana - Materiales de Construccion<br>
+      Prototipo de vistas moviles v1.0
+    </p>
+  </div>
+</body>
+</html>

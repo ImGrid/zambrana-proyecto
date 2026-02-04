@@ -168,9 +168,11 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       const { limit, offset, estado_id, cliente_id, fecha_desde, fecha_hasta } = request.query;
       const currentUser = request.user as { id: number; rol: string };
 
-      // Si es cliente, solo puede ver sus propios pedidos
+      // Filtros base
       let filtroClienteId = cliente_id;
+      let filtroConductorId: number | undefined = undefined;
 
+      // Si es cliente, solo puede ver sus propios pedidos
       if (currentUser.rol === 'cliente') {
         const clienteResult = await pool.query<{ id: number }>(
           'SELECT id FROM clientes WHERE usuario_id = $1',
@@ -199,9 +201,39 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         filtroClienteId = clienteRow.id;
       }
 
+      // Si es conductor, solo puede ver pedidos asignados a el
+      if (currentUser.rol === 'conductor') {
+        const conductorResult = await pool.query<{ id: number }>(
+          'SELECT id FROM conductores WHERE usuario_id = $1',
+          [currentUser.id]
+        );
+
+        if (conductorResult.rows.length === 0) {
+          return {
+            pedidos: [],
+            total: 0,
+            limit,
+            offset,
+          };
+        }
+
+        const conductorRow = conductorResult.rows[0];
+        if (!conductorRow) {
+          return {
+            pedidos: [],
+            total: 0,
+            limit,
+            offset,
+          };
+        }
+
+        filtroConductorId = conductorRow.id;
+      }
+
       const result = await listPedidos(limit, offset, {
         estado_id,
         cliente_id: filtroClienteId,
+        conductor_asignado_id: filtroConductorId,
         fecha_desde,
         fecha_hasta,
       });

@@ -294,6 +294,7 @@ export async function listPedidos(
   filters: {
     estado_id?: number;
     cliente_id?: number;
+    conductor_asignado_id?: number;
     fecha_desde?: string;
     fecha_hasta?: string;
   } = {}
@@ -310,6 +311,7 @@ export async function listPedidos(
         id: p.id,
         codigo_seguimiento: p.codigo_seguimiento,
         cliente_razon_social: p.cliente_razon_social || '',
+        cliente_nombre: p.cliente_razon_social || '',
         estado_nombre: p.estado_nombre || '',
         direccion_entrega: p.direccion_entrega,
         fecha_pedido: p.fecha_pedido.toISOString(),
@@ -320,6 +322,11 @@ export async function listPedidos(
         monto_total: p.monto_total,
         camion_placa: p.camion_placa || null,
         conductor_nombre: p.conductor_nombre || null,
+        latitud_entrega: p.latitud_entrega || null,
+        longitud_entrega: p.longitud_entrega || null,
+        distancia_km: p.distancia_km || null,
+        eta_minutos: p.eta_minutos || null,
+        ruta_calculada: p.ruta_calculada || null,
       })),
       total,
       limit,

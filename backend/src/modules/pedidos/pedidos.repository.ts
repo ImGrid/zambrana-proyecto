@@ -212,6 +212,7 @@ export async function findAllPedidos(
   filters: {
     estado_id?: number;
     cliente_id?: number;
+    conductor_asignado_id?: number;
     fecha_desde?: string;
     fecha_hasta?: string;
   } = {}
@@ -225,6 +226,11 @@ export async function findAllPedidos(
       p.fecha_entrega_solicitada,
       p.total_m3,
       p.monto_total,
+      p.latitud_entrega,
+      p.longitud_entrega,
+      p.distancia_km,
+      p.eta_minutos,
+      p.ruta_calculada,
       c.razon_social as cliente_razon_social,
       e.nombre as estado_nombre,
       cam.placa as camion_placa,
@@ -249,6 +255,12 @@ export async function findAllPedidos(
   if (filters.cliente_id) {
     query += ` AND p.cliente_id = $${paramIndex}`;
     params.push(filters.cliente_id);
+    paramIndex++;
+  }
+
+  if (filters.conductor_asignado_id) {
+    query += ` AND p.conductor_asignado_id = $${paramIndex}`;
+    params.push(filters.conductor_asignado_id);
     paramIndex++;
   }
 
@@ -278,6 +290,7 @@ export async function countPedidos(
   filters: {
     estado_id?: number;
     cliente_id?: number;
+    conductor_asignado_id?: number;
     fecha_desde?: string;
     fecha_hasta?: string;
   } = {}
@@ -295,6 +308,12 @@ export async function countPedidos(
   if (filters.cliente_id) {
     query += ` AND cliente_id = $${paramIndex}`;
     params.push(filters.cliente_id);
+    paramIndex++;
+  }
+
+  if (filters.conductor_asignado_id) {
+    query += ` AND conductor_asignado_id = $${paramIndex}`;
+    params.push(filters.conductor_asignado_id);
     paramIndex++;
   }
 

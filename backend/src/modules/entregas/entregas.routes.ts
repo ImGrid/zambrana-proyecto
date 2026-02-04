@@ -6,7 +6,8 @@ import {
   recibirGPSSchema,
   finalizarEntregaSchema,
   paginacionSchema,
-  idParamSchema
+  idParamSchema,
+  registrarEventoSchema
 } from './entregas.schemas.js';
 
 const entregasRoutes: FastifyPluginAsyncZod = async (fastify) => {
@@ -14,7 +15,7 @@ const entregasRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.route({
     method: 'POST',
     url: '/iniciar',
-    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente')],
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente', 'conductor')],
     schema: {
       description: 'Inicia una nueva entrega para un pedido confirmado',
       tags: ['entregas'],
@@ -38,8 +39,13 @@ const entregasRoutes: FastifyPluginAsyncZod = async (fastify) => {
     handler: async (request, reply) => {
       try {
         const { pedido_id } = request.body;
+        const currentUser = request.user as { id: number; rol: string };
 
-        const entrega = await entregasService.iniciarEntrega(pedido_id);
+        const entrega = await entregasService.iniciarEntrega(
+          pedido_id,
+          currentUser.id,
+          currentUser.rol
+        );
 
         return {
           success: true,
@@ -101,6 +107,57 @@ const entregasRoutes: FastifyPluginAsyncZod = async (fastify) => {
         return reply.code(400).send({
           success: false,
           error: error.message || 'Error al registrar posicion GPS'
+        });
+      }
+    }
+  });
+
+  // POST /entregas/:id/evento - Registra evento de movimiento (detencion/reanudacion)
+  fastify.route({
+    method: 'POST',
+    url: '/:id/evento',
+    onRequest: [fastify.authenticate, fastify.requireRole('admin', 'gerente', 'conductor')],
+    schema: {
+      description: 'Registra evento de movimiento (detencion o reanudacion)',
+      tags: ['entregas'],
+      params: idParamSchema,
+      body: registrarEventoSchema,
+      response: {
+        200: z.object({
+          success: z.boolean(),
+          data: z.any(),
+          mensaje: z.string()
+        }),
+        400: z.object({
+          success: z.boolean(),
+          error: z.string()
+        })
+      }
+    },
+    handler: async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const eventoData = request.body;
+
+        const resultado = await entregasService.registrarEventoMovimiento(
+          id,
+          eventoData.tipo,
+          eventoData.motivo,
+          eventoData.descripcion,
+          eventoData.latitud,
+          eventoData.longitud
+        );
+
+        return {
+          success: true,
+          data: resultado.evento,
+          mensaje: resultado.mensaje
+        };
+      } catch (error: any) {
+        fastify.log.error('Error al registrar evento:', error);
+        return reply.code(400).send({
+          success: false,
+          error: error.message || 'Error al registrar evento'
         });
       }
     }

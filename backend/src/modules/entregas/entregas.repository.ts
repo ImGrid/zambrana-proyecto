@@ -597,3 +597,60 @@ export async function contarEntregasPorEstado(
 
   return parseInt(result.rows[0].count, 10);
 }
+
+// Obtiene el ultimo evento de movimiento (DETENIDO o REANUDO) de una entrega
+export async function obtenerUltimoEventoMovimiento(
+  entrega_id: number
+): Promise<EventoEntrega | null> {
+  const result = await pool.query<EventoEntrega>(
+    `SELECT *
+     FROM eventos_entrega
+     WHERE entrega_id = $1
+       AND tipo_evento IN ('DETENIDO', 'REANUDO')
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [entrega_id]
+  );
+
+  return result.rows[0] || null;
+}
+
+/**
+ * Registra un evento de movimiento en una entrega
+ *
+ * Uso: Conductor reporta detencion o reanudacion de marcha
+ *
+ * @param entrega_id - ID de la entrega
+ * @param tipo_evento - Tipo de evento (DETENIDO, REANUDO)
+ * @param descripcion - Descripcion o motivo (opcional)
+ * @param latitud - Latitud donde ocurrio (opcional)
+ * @param longitud - Longitud donde ocurrio (opcional)
+ * @returns Evento creado
+ */
+export async function registrarEventoMovimiento(
+  entrega_id: number,
+  tipo_evento: string,
+  descripcion?: string,
+  latitud?: number,
+  longitud?: number
+): Promise<EventoEntrega> {
+  const result = await pool.query<EventoEntrega>(
+    `INSERT INTO eventos_entrega (
+      entrega_id,
+      tipo_evento,
+      descripcion,
+      latitud,
+      longitud,
+      created_at
+    ) VALUES ($1, $2, $3, $4, $5, NOW())
+    RETURNING *`,
+    [entrega_id, tipo_evento, descripcion || null, latitud || null, longitud || null]
+  );
+
+  const evento = result.rows[0];
+  if (!evento) {
+    throw new Error('Error al registrar evento de movimiento');
+  }
+
+  return evento;
+}

@@ -3,23 +3,35 @@ import * as gpsRepo from './gps.repository.js';
 import * as rutasService from './rutas.service.js';
 import { pool } from '../../database/postgres/pool.js';
 
+// Periodo de gracia en minutos despues de un evento REANUDO
+const PERIODO_GRACIA_MINUTOS = 1;
+
 /**
  * Inicia una nueva entrega para un pedido
  *
  * FLUJO COMPLETO:
  * 1. Validar que el pedido existe y esta confirmado
- * 2. Calcular ruta desde planta hasta cliente usando Neo4j
- * 3. Asignar camion y conductor disponibles
- * 4. Crear entrega con la ruta calculada
- * 5. Actualizar estados de pedido, camion y conductor
+ * 2. Si es conductor, validar que es el asignado al pedido
+ * 3. Usar camion y conductor asignados en el pedido
+ * 4. Calcular ruta desde planta hasta cliente usando Neo4j
+ * 5. Crear entrega con la ruta calculada
+ * 6. Actualizar estados de pedido, camion y conductor
  *
  * @param pedido_id - ID del pedido a entregar
+ * @param usuario_id - ID del usuario que inicia (opcional)
+ * @param rol - Rol del usuario (opcional)
  * @returns Entrega creada con todos los detalles
  */
-export async function iniciarEntrega(pedido_id: number) {
-  // Validar que el pedido existe y obtener el cliente_id
+export async function iniciarEntrega(
+  pedido_id: number,
+  usuario_id?: number,
+  rol?: string
+) {
+  // Validar que el pedido existe y obtener datos completos
   const pedidoResult = await pool.query(
-    `SELECT p.id, p.codigo_seguimiento, p.cliente_id, e.nombre as estado
+    `SELECT p.id, p.codigo_seguimiento, p.cliente_id,
+            p.camion_asignado_id, p.conductor_asignado_id,
+            e.nombre as estado
      FROM pedidos p
      JOIN estados_pedido e ON p.estado_actual_id = e.id
      WHERE p.id = $1`,
@@ -36,6 +48,28 @@ export async function iniciarEntrega(pedido_id: number) {
     throw new Error(`Pedido ${pedido.codigo_seguimiento} no esta confirmado (estado actual: ${pedido.estado})`);
   }
 
+  // Verificar que el pedido tiene camion y conductor asignados
+  if (!pedido.camion_asignado_id || !pedido.conductor_asignado_id) {
+    throw new Error(`Pedido ${pedido.codigo_seguimiento} no tiene camion o conductor asignado`);
+  }
+
+  // Si es conductor, validar que es el asignado al pedido
+  if (rol === 'conductor' && usuario_id) {
+    const conductorResult = await pool.query<{ id: number }>(
+      'SELECT id FROM conductores WHERE usuario_id = $1',
+      [usuario_id]
+    );
+
+    const conductorRow = conductorResult.rows[0];
+    if (!conductorRow) {
+      throw new Error('No se encontro informacion de conductor para este usuario');
+    }
+
+    if (conductorRow.id !== pedido.conductor_asignado_id) {
+      throw new Error('No tienes permiso para iniciar esta entrega. No eres el conductor asignado.');
+    }
+  }
+
   // Verificar que no exista una entrega previa para este pedido
   const entregaExistente = await entregasRepo.findEntregaByPedidoId(pedido_id);
   if (entregaExistente) {
@@ -45,44 +79,14 @@ export async function iniciarEntrega(pedido_id: number) {
   // Calcular ruta desde planta hasta cliente usando Neo4j
   const rutaCompleta = await rutasService.calcularRutaHastaPedido(pedido_id);
 
-  // Buscar camion disponible
-  const camionResult = await pool.query(
-    `SELECT id, placa, modelo
-     FROM camiones
-     WHERE activo = TRUE
-     ORDER BY id
-     LIMIT 1`
-  );
-
-  if (camionResult.rows.length === 0) {
-    throw new Error('No hay camiones disponibles en este momento');
-  }
-
-  const camion = camionResult.rows[0];
-
-  // Buscar conductor disponible
-  const conductorResult = await pool.query(
-    `SELECT id, nombre_completo
-     FROM conductores
-     WHERE activo = TRUE
-     ORDER BY id
-     LIMIT 1`
-  );
-
-  if (conductorResult.rows.length === 0) {
-    throw new Error('No hay conductores disponibles en este momento');
-  }
-
-  const conductor = conductorResult.rows[0];
-
   // Crear identificador de ruta planificada
   const rutaPlanificadaId = `PLANTA->${rutaCompleta.interseccion_destino.id}`;
 
-  // Crear la entrega
+  // Crear la entrega con camion y conductor asignados en el pedido
   const entrega = await entregasRepo.createEntrega(
     pedido_id,
-    camion.id,
-    conductor.id,
+    pedido.camion_asignado_id,
+    pedido.conductor_asignado_id,
     rutaPlanificadaId
   );
 
@@ -253,6 +257,37 @@ export async function finalizarEntrega(
   };
 }
 
+// Determina si el vehiculo esta detenido usando logica hibrida
+// 1. Si hay evento REANUDO reciente (dentro del periodo de gracia), confiar en el conductor
+// 2. Si paso el periodo de gracia o no hay evento, usar calculo por velocidad
+async function determinarSiDetenido(
+  entrega_id: number,
+  velocidadPromedio: number
+): Promise<boolean> {
+  // Obtener el ultimo evento de movimiento
+  const ultimoEvento = await entregasRepo.obtenerUltimoEventoMovimiento(entrega_id);
+
+  // Si hay un evento REANUDO reciente, verificar periodo de gracia
+  if (ultimoEvento && ultimoEvento.tipo_evento === 'REANUDO') {
+    const ahora = new Date();
+    const tiempoEvento = new Date(ultimoEvento.created_at);
+    const minutosDesdeEvento = (ahora.getTime() - tiempoEvento.getTime()) / 1000 / 60;
+
+    // Dentro del periodo de gracia - confiar en el conductor
+    if (minutosDesdeEvento < PERIODO_GRACIA_MINUTOS) {
+      return false;
+    }
+  }
+
+  // Si hay un evento DETENIDO reciente (sin REANUDO posterior), esta detenido
+  if (ultimoEvento && ultimoEvento.tipo_evento === 'DETENIDO') {
+    return true;
+  }
+
+  // Fuera del periodo de gracia o sin eventos - usar calculo por velocidad
+  return rutasService.estaDetenido(velocidadPromedio);
+}
+
 /**
  * Obtiene el estado actual de una entrega con ultima posicion GPS
  *
@@ -274,8 +309,8 @@ export async function obtenerEstadoEntrega(entrega_id: number) {
   // Calcular velocidad promedio de los ultimos 10 minutos
   const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega_id, 10);
 
-  // Detectar si esta detenido
-  const estaDetenido = rutasService.estaDetenido(velocidadPromedio);
+  // Detectar si esta detenido (logica hibrida con periodo de gracia)
+  const estaDetenido = await determinarSiDetenido(entrega_id, velocidadPromedio);
 
   // Calcular ETA actualizado si esta en camino
   let etaActualizado = null;
@@ -358,11 +393,14 @@ export async function obtenerEntregasActivas() {
       const ultimaPosicion = await gpsRepo.obtenerUltimaPosicion(entrega.id);
       const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega.id, 10);
 
+      // Usar logica hibrida con periodo de gracia
+      const estaDetenido = await determinarSiDetenido(entrega.id, velocidadPromedio);
+
       return {
         ...entrega,
         posicion_actual: ultimaPosicion,
         velocidad_promedio_kmh: velocidadPromedio,
-        esta_detenido: rutasService.estaDetenido(velocidadPromedio)
+        esta_detenido: estaDetenido
       };
     })
   );
@@ -445,5 +483,68 @@ export async function obtenerEstadisticasEntregas() {
     completadas: totalCompletadas,
     canceladas: totalCanceladas,
     total: totalEnCamino + totalCompletadas + totalCanceladas
+  };
+}
+
+/**
+ * Registra un evento de movimiento reportado por el conductor
+ *
+ * FLUJO:
+ * 1. Validar que la entrega existe y esta activa
+ * 2. Validar que el tipo de evento es correcto
+ * 3. Registrar evento en BD
+ *
+ * @param entrega_id - ID de la entrega
+ * @param tipo - Tipo de evento (DETENIDO, REANUDO)
+ * @param motivo - Motivo de la detencion (opcional)
+ * @param descripcion - Descripcion adicional (opcional)
+ * @param latitud - Latitud donde ocurrio (opcional)
+ * @param longitud - Longitud donde ocurrio (opcional)
+ * @returns Evento registrado
+ */
+export async function registrarEventoMovimiento(
+  entrega_id: number,
+  tipo: 'DETENIDO' | 'REANUDO',
+  motivo?: string,
+  descripcion?: string,
+  latitud?: number,
+  longitud?: number
+) {
+  // Validar que la entrega existe y esta activa
+  const entrega = await entregasRepo.findEntregaById(entrega_id);
+
+  if (!entrega) {
+    throw new Error(`Entrega con ID ${entrega_id} no encontrada`);
+  }
+
+  if (entrega.entregado === true || !entrega.hora_salida_planta) {
+    throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
+  }
+
+  // Construir descripcion completa
+  let descripcionCompleta = '';
+  if (tipo === 'DETENIDO' && motivo) {
+    descripcionCompleta = `Motivo: ${motivo}`;
+    if (descripcion) {
+      descripcionCompleta += ` - ${descripcion}`;
+    }
+  } else if (descripcion) {
+    descripcionCompleta = descripcion;
+  }
+
+  // Registrar evento
+  const evento = await entregasRepo.registrarEventoMovimiento(
+    entrega_id,
+    tipo,
+    descripcionCompleta || undefined,
+    latitud,
+    longitud
+  );
+
+  return {
+    evento,
+    mensaje: tipo === 'DETENIDO'
+      ? 'Detencion reportada correctamente'
+      : 'Reanudacion de marcha reportada correctamente'
   };
 }

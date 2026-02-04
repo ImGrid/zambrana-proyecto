@@ -128,3 +128,51 @@ export const pedidoIdParamSchema = z.object({
 });
 
 export type PedidoIdParamInput = z.infer<typeof pedidoIdParamSchema>;
+
+// Tipos de eventos de movimiento que el conductor puede reportar
+const tiposEventoMovimiento = [
+  'DETENIDO',
+  'REANUDO',
+] as const;
+
+// Motivos de detencion predefinidos
+const motivosDetencion = [
+  'TRAFICO',
+  'PROBLEMA_MECANICO',
+  'DESCANSO',
+  'CLIENTE_NO_DISPONIBLE',
+  'OTRO',
+] as const;
+
+/**
+ * Schema para registrar evento de movimiento
+ * El conductor reporta cuando esta detenido o reanuda la marcha
+ */
+export const registrarEventoSchema = z.object({
+  tipo: z.enum(tiposEventoMovimiento, {
+    message: 'Tipo debe ser DETENIDO o REANUDO'
+  }),
+
+  motivo: z.enum(motivosDetencion, {
+    message: 'Motivo no valido'
+  }).optional(),
+
+  descripcion: z
+    .string()
+    .max(500, 'Descripcion no puede exceder 500 caracteres')
+    .optional(),
+
+  latitud: z
+    .number()
+    .min(-90, 'Latitud debe estar entre -90 y 90')
+    .max(90, 'Latitud debe estar entre -90 y 90')
+    .optional(),
+
+  longitud: z
+    .number()
+    .min(-180, 'Longitud debe estar entre -180 y 180')
+    .max(180, 'Longitud debe estar entre -180 y 180')
+    .optional()
+});
+
+export type RegistrarEventoInput = z.infer<typeof registrarEventoSchema>;

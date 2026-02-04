@@ -117,6 +117,7 @@ export const pedidoListItemSchema = z.object({
   id: z.number(),
   codigo_seguimiento: z.string(),
   cliente_razon_social: z.string(),
+  cliente_nombre: z.string(),
   estado_nombre: z.string(),
   direccion_entrega: z.string(),
   fecha_pedido: z.string(),
@@ -124,7 +125,12 @@ export const pedidoListItemSchema = z.object({
   total_m3: z.coerce.number(),
   monto_total: z.coerce.number(),
   camion_placa: z.string().nullable(),
-  conductor_nombre: z.string().nullable()
+  conductor_nombre: z.string().nullable(),
+  latitud_entrega: z.coerce.number().nullable(),
+  longitud_entrega: z.coerce.number().nullable(),
+  distancia_km: z.coerce.number().nullable(),
+  eta_minutos: z.coerce.number().nullable(),
+  ruta_calculada: z.any().nullable()
 });
 
 // Schema para lista de pedidos

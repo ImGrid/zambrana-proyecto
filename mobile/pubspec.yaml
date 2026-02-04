@@ -1,0 +1,36 @@
+name: zambrana_android
+description: "App para conductores - Sistema de Tracking GPS Agregados Zambrana"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # HTTP Client
+  dio: ^5.9.1
+
+  # Mapas OpenStreetMap
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+
+  # GPS/Ubicacion
+  geolocator: ^14.0.2
+
+  # Estado
+  flutter_riverpod: ^3.2.0
+
+  # Almacenamiento local
+  shared_preferences: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

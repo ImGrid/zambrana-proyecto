@@ -1,0 +1,31 @@
+# Carpetas locales de desarrollo
+.claude/
+anexos/
+cache/
+conversacion/
+doc/
+informe/
+mockups/
+scripts/
+
+# Archivos de configuracion local
+cookies.txt
+credenciales.txt
+errores.txt
+nul
+*.sql
+
+# Archivos temporales
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Node modules (ya estan en sus respectivos gitignore)
+node_modules/
+
+# Archivos HTML de prueba
+color-palette-preview.html
+
+# Mobile views (reemplazado por mobile/)
+mobile-views/flutter-docs/

@@ -14,7 +14,7 @@ interface PedidoCardProps {
 export function PedidoCard({ pedido, onClick, showTracking = true }: PedidoCardProps) {
   const navigate = useNavigate();
 
-  const esEnCamino = pedido.estado_nombre.toLowerCase().includes('en camino');
+  const esEnCamino = pedido.estado_nombre.toLowerCase().includes('en_camino');
 
   const handleVerTracking = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -25,7 +25,7 @@ export function PedidoCard({ pedido, onClick, showTracking = true }: PedidoCardP
     const estadoLower = estado.toLowerCase();
     if (estadoLower.includes('pendiente')) return 'warning';
     if (estadoLower.includes('confirmado')) return 'primary';
-    if (estadoLower.includes('en camino')) return 'primary';
+    if (estadoLower.includes('en_camino')) return 'primary';
     if (estadoLower.includes('entregado')) return 'success';
     if (estadoLower.includes('cancelado')) return 'danger';
     return 'default';

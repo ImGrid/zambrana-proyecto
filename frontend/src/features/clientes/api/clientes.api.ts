@@ -15,7 +15,9 @@ export const getClientesApi = async (params?: ListClientesParams): Promise<Clien
   const { data } = await api.get<ClientesListResponse>('/clientes', {
     params: {
       limit: params?.limit,
-      offset: params?.offset
+      offset: params?.offset,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order
     }
   });
   return data;

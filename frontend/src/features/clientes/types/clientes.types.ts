@@ -35,6 +35,8 @@ export interface ClientesListResponse {
 export interface ListClientesParams {
   limit?: number;
   offset?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 // Datos para crear cliente

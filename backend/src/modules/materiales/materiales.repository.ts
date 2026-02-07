@@ -26,13 +26,25 @@ export interface MaterialListItem {
   activo: boolean;
 }
 
+// Whitelist de campos ordenables
+const SORT_FIELDS: Record<string, string> = {
+  nombre: 'nombre',
+  codigo: 'codigo',
+  precio_m3: 'precio_m3',
+  stock_actual: 'stock_actual',
+};
+
 // Listar todos los materiales con paginación
 export async function findAllMateriales(
   limit: number = 20,
   offset: number = 0,
-  soloActivos: boolean = false
+  soloActivos: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<MaterialListItem[]> {
   const whereClause = soloActivos ? 'WHERE activo = true' : '';
+  const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'nombre';
+  const sortDirection = sort_order === 'desc' ? 'DESC' : 'ASC';
 
   const result = await pool.query<MaterialRow>(
     `SELECT
@@ -46,7 +58,7 @@ export async function findAllMateriales(
       activo
     FROM materiales
     ${whereClause}
-    ORDER BY nombre ASC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );

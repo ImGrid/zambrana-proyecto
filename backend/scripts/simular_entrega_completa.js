@@ -140,7 +140,11 @@ async function simularEntregaCompleta() {
     // ========================================
     // PASO 4: BUSCAR RECURSOS DISPONIBLES
     // ========================================
-    console.log('Paso 4: Buscando camion y conductor disponibles...');
+    console.log('Paso 4: Asignando conductor 7 y buscando camion disponible...');
+
+    // Conductor 7 hardcodeado
+    const conductorId = 7;
+    const conductorNombre = 'Diego Morales Ríos';
 
     // Buscar camion disponible
     const camionDisponibleResult = await pool.query(`
@@ -163,30 +167,9 @@ async function simularEntregaCompleta() {
     const camionId = camionDisponibleResult.rows[0].id;
     const camionPlaca = camionDisponibleResult.rows[0].placa;
 
-    // Buscar conductor disponible
-    const conductorDisponibleResult = await pool.query(`
-      SELECT c.id, c.nombre_completo
-      FROM conductores c
-      WHERE c.activo = true
-        AND c.id NOT IN (
-          SELECT conductor_asignado_id
-          FROM pedidos
-          WHERE estado_actual_id IN (2, 3)
-            AND conductor_asignado_id IS NOT NULL
-        )
-      LIMIT 1
-    `);
-
-    if (conductorDisponibleResult.rows.length === 0) {
-      throw new Error('No hay conductores disponibles');
-    }
-
-    const conductorId = conductorDisponibleResult.rows[0].id;
-    const conductorNombre = conductorDisponibleResult.rows[0].nombre_completo;
-
-    console.log(`OK - Recursos encontrados:`);
+    console.log(`OK - Recursos asignados:`);
     console.log(`  Camion: ${camionPlaca} (ID: ${camionId})`);
-    console.log(`  Conductor: ${conductorNombre} (ID: ${conductorId})\\n`);
+    console.log(`  Conductor: ${conductorNombre} (ID: ${conductorId})\n`);
 
     // ========================================
     // PASO 5: CONFIRMAR PEDIDO

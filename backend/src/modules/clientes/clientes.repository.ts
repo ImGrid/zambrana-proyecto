@@ -22,11 +22,23 @@ export interface ClienteListItem {
   tipo_cliente_nombre: string;
 }
 
+// Whitelist de campos ordenables
+const SORT_FIELDS: Record<string, string> = {
+  razon_social: 'c.razon_social',
+  nit: 'c.nit',
+  tipo_cliente_nombre: 'tc.nombre',
+};
+
 // Listar todos los clientes con paginación
 export async function findAllClientes(
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ClienteListItem[]> {
+  const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'c.razon_social';
+  const sortDirection = sort_order === 'desc' ? 'DESC' : 'ASC';
+
   const result = await pool.query<ClienteRow>(
     `SELECT
       c.id,
@@ -36,7 +48,7 @@ export async function findAllClientes(
       tc.nombre as tipo_cliente_nombre
     FROM clientes c
     INNER JOIN tipo_cliente tc ON c.tipo_cliente_id = tc.id
-    ORDER BY c.razon_social ASC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );

@@ -30,7 +30,9 @@ export const listPedidosSchema = z.object({
   estado_id: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   cliente_id: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   fecha_desde: z.string().optional(),
-  fecha_hasta: z.string().optional()
+  fecha_hasta: z.string().optional(),
+  sort_by: z.string().optional(),
+  sort_order: z.enum(['asc', 'desc']).optional()
 });
 
 // Schema para obtener pedido por ID

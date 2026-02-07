@@ -28,12 +28,21 @@ export interface CamionListItem {
   en_mantenimiento: boolean;
 }
 
+// Whitelist de campos ordenables
+const SORT_FIELDS: Record<string, string> = {
+  placa: 'c.placa',
+  tipo_camion: 'tc.nombre',
+  capacidad_m3: 'c.capacidad_m3',
+};
+
 // Listar todos los camiones con paginación
 export async function findAllCamiones(
   limit: number = 20,
   offset: number = 0,
   soloActivos: boolean = false,
-  soloDisponibles: boolean = false
+  soloDisponibles: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<CamionListItem[]> {
   const whereConditions: string[] = [];
 
@@ -49,6 +58,9 @@ export async function findAllCamiones(
     ? `WHERE ${whereConditions.join(' AND ')}`
     : '';
 
+  const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'c.placa';
+  const sortDirection = sort_order === 'desc' ? 'DESC' : 'ASC';
+
   const result = await pool.query<CamionRow>(
     `SELECT
       c.id,
@@ -62,7 +74,7 @@ export async function findAllCamiones(
     FROM camiones c
     INNER JOIN tipo_camion tc ON c.tipo_camion_id = tc.id
     ${whereClause}
-    ORDER BY c.placa ASC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );

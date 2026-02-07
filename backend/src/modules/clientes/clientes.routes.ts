@@ -41,8 +41,7 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
       }
     },
     handler: async (request, reply) => {
-      // Acceso directo sin destructuring para mantener type safety
-      const result = await listClientes(request.query.limit, request.query.offset);
+      const result = await listClientes(request.query.limit, request.query.offset, request.query.sort_by, request.query.sort_order);
 
       if (!result.success) {
         return reply.code(500).send({
@@ -216,6 +215,7 @@ const clientesRoutes: FastifyPluginAsyncZod = async (fastify) => {
         200: clienteUpdateResponseSchema,
         400: errorResponseSchema,
         401: errorResponseSchema,
+        403: errorResponseSchema,
         404: errorResponseSchema,
         500: errorResponseSchema
       }

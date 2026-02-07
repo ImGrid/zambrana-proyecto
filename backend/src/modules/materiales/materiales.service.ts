@@ -55,11 +55,13 @@ interface AjustarStockResult {
 export async function listMateriales(
   limit: number = 20,
   offset: number = 0,
-  soloActivos: boolean = false
+  soloActivos: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ListMaterialesResult> {
   try {
     const [materiales, total] = await Promise.all([
-      materialesRepo.findAllMateriales(limit, offset, soloActivos),
+      materialesRepo.findAllMateriales(limit, offset, soloActivos, sort_by, sort_order),
       materialesRepo.countMateriales(soloActivos)
     ]);
 

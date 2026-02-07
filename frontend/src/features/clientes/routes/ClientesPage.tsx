@@ -8,6 +8,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { Pagination } from '@/components/ui/Pagination';
 import { Button } from '@/components/ui/Button';
 import type { Cliente } from '../types/clientes.types';
+import type { SortOrder } from '@/components/ui/Table';
 
 export const ClientesPage = () => {
   const [page, setPage] = useState(1);
@@ -15,6 +16,8 @@ export const ClientesPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
 
   const limit = 20;
   const offset = (page - 1) * limit;
@@ -22,6 +25,8 @@ export const ClientesPage = () => {
   const { data, isLoading } = useClientes({
     limit,
     offset,
+    sort_by: sortBy,
+    sort_order: sortOrder,
   });
 
   const { data: clienteData } = useCliente(selectedId);
@@ -60,6 +65,21 @@ export const ClientesPage = () => {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedCliente(null);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortBy(undefined);
+        setSortOrder(undefined);
+      }
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+    setPage(1);
   };
 
   return (
@@ -105,6 +125,9 @@ export const ClientesPage = () => {
         clientes={clientesFiltered}
         loading={isLoading}
         onEdit={handleOpenEdit}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
       />
 
       <ClienteForm

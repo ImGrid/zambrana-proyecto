@@ -1,6 +1,6 @@
 import { Edit, Power } from 'lucide-react';
 import { Table } from '@/components/ui/Table';
-import type { Column } from '@/components/ui/Table';
+import type { Column, SortOrder } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { ConductorListItem } from '../types/conductores.types';
@@ -10,16 +10,21 @@ interface ConductoresTableProps {
   loading?: boolean;
   onEdit?: (id: number) => void;
   onToggleActivo?: (id: number) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
 }
 
-export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo }: ConductoresTableProps) => {
+export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo, sortBy, sortOrder, onSort }: ConductoresTableProps) => {
   const columns: Column<ConductorListItem>[] = [
     {
       header: 'Nombre Completo',
+      sortKey: 'nombre_completo',
       accessor: 'nombre_completo',
     },
     {
       header: 'CI',
+      sortKey: 'ci',
       accessor: 'ci',
     },
     {
@@ -32,6 +37,7 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
     },
     {
       header: 'Categoría Licencia',
+      sortKey: 'licencia_categoria',
       accessor: (row) => (
         <span className="text-cemento-900">
           {row.licencia_categoria || 'N/A'}
@@ -77,6 +83,9 @@ export const ConductoresTable = ({ conductores, loading, onEdit, onToggleActivo 
       data={conductores}
       loading={loading}
       emptyMessage="No se encontraron conductores"
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
     />
   );
 };

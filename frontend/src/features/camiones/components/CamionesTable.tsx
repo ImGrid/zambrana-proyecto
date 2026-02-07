@@ -1,6 +1,6 @@
 import { Edit, Power, Wrench } from 'lucide-react';
 import { Table } from '@/components/ui/Table';
-import type { Column } from '@/components/ui/Table';
+import type { Column, SortOrder } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { CamionListItem } from '../types/camiones.types';
@@ -11,16 +11,21 @@ interface CamionesTableProps {
   onEdit?: (id: number) => void;
   onToggleActivo?: (id: number) => void;
   onToggleMantenimiento?: (id: number) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
 }
 
-export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onToggleMantenimiento }: CamionesTableProps) => {
+export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onToggleMantenimiento, sortBy, sortOrder, onSort }: CamionesTableProps) => {
   const columns: Column<CamionListItem>[] = [
     {
       header: 'Placa',
+      sortKey: 'placa',
       accessor: 'placa',
     },
     {
       header: 'Tipo',
+      sortKey: 'tipo_camion',
       accessor: 'tipo_camion',
     },
     {
@@ -33,6 +38,7 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
     },
     {
       header: 'Capacidad',
+      sortKey: 'capacidad_m3',
       accessor: (row) => (
         <span className="text-cemento-900">
           {row.capacidad_m3} m³
@@ -90,6 +96,9 @@ export const CamionesTable = ({ camiones, loading, onEdit, onToggleActivo, onTog
       data={camiones}
       loading={loading}
       emptyMessage="No se encontraron camiones"
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
     />
   );
 };

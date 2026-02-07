@@ -44,9 +44,9 @@ const conductoresRoutes: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     handler: async (request, reply) => {
-      const { limit, offset, soloActivos } = request.query;
+      const { limit, offset, soloActivos, sort_by, sort_order } = request.query;
 
-      const result = await listConductores(limit, offset, soloActivos);
+      const result = await listConductores(limit, offset, soloActivos, sort_by, sort_order);
 
       if (!result.success) {
         return reply.code(500).send({

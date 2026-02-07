@@ -1,6 +1,6 @@
 import { Edit } from 'lucide-react';
 import { Table } from '@/components/ui/Table';
-import type { Column } from '@/components/ui/Table';
+import type { Column, SortOrder } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { ClienteListItem } from '../types/clientes.types';
@@ -9,16 +9,21 @@ interface ClientesTableProps {
   clientes: ClienteListItem[];
   loading?: boolean;
   onEdit?: (id: number) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
 }
 
-export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps) => {
+export const ClientesTable = ({ clientes, loading, onEdit, sortBy, sortOrder, onSort }: ClientesTableProps) => {
   const columns: Column<ClienteListItem>[] = [
     {
       header: 'Razón Social',
+      sortKey: 'razon_social',
       accessor: 'razon_social',
     },
     {
       header: 'NIT',
+      sortKey: 'nit',
       accessor: (row) => (
         <span className="text-cemento-900">
           {row.nit || 'N/A'}
@@ -43,6 +48,7 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
     },
     {
       header: 'Tipo',
+      sortKey: 'tipo_cliente_nombre',
       accessor: (row) => (
         <Badge variant={
           row.tipo_cliente_nombre === 'Constructora' ? 'info' :
@@ -75,6 +81,9 @@ export const ClientesTable = ({ clientes, loading, onEdit }: ClientesTableProps)
       data={clientes}
       loading={loading}
       emptyMessage="No se encontraron clientes"
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
     />
   );
 };

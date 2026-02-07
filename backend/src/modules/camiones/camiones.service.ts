@@ -52,11 +52,13 @@ export async function listCamiones(
   limit: number = 20,
   offset: number = 0,
   soloActivos: boolean = false,
-  soloDisponibles: boolean = false
+  soloDisponibles: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ListCamionesResult> {
   try {
     const [camiones, total] = await Promise.all([
-      camionesRepo.findAllCamiones(limit, offset, soloActivos, soloDisponibles),
+      camionesRepo.findAllCamiones(limit, offset, soloActivos, soloDisponibles, sort_by, sort_order),
       camionesRepo.countCamiones(soloActivos, soloDisponibles)
     ]);
 

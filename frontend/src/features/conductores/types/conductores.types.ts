@@ -38,6 +38,8 @@ export interface ListConductoresParams {
   limit?: number;
   offset?: number;
   soloActivos?: boolean;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 // Datos para crear conductor

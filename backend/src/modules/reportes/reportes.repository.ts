@@ -329,8 +329,23 @@ export async function getTotalesVentas(
   };
 }
 
+// Nombres validos de vistas materializadas
+const MATERIALIZED_VIEWS = [
+  'mv_dashboard_gerente',
+  'mv_reporte_clientes_mensual',
+  'mv_rendimiento_conductores',
+  'mv_resumen_stock'
+] as const;
+
+type MaterializedViewName = typeof MATERIALIZED_VIEWS[number];
+
+// Refrescar una vista materializada individual (CONCURRENTLY)
+export async function refreshSingleView(viewName: MaterializedViewName): Promise<void> {
+  await pool.query(`REFRESH MATERIALIZED VIEW CONCURRENTLY ${viewName}`);
+}
+
 /**
- * Refrescar todas las vistas materializadas
+ * Refrescar todas las vistas materializadas (CONCURRENTLY)
  */
 export async function refreshMaterializedViews(): Promise<{
   success: boolean;
@@ -342,16 +357,9 @@ export async function refreshMaterializedViews(): Promise<{
   const refreshed: string[] = [];
   const errors: Array<{ view: string; error: string }> = [];
 
-  const views = [
-    'mv_dashboard_gerente',
-    'mv_reporte_clientes_mensual',
-    'mv_rendimiento_conductores',
-    'mv_resumen_stock'
-  ];
-
-  for (const view of views) {
+  for (const view of MATERIALIZED_VIEWS) {
     try {
-      await pool.query(`REFRESH MATERIALIZED VIEW ${view}`);
+      await refreshSingleView(view);
       refreshed.push(view);
     } catch (error: any) {
       errors.push({

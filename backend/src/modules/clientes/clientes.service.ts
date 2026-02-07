@@ -44,11 +44,13 @@ interface UpdateClienteResult {
 // Listar clientes con paginación
 export async function listClientes(
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ListClientesResult> {
   try {
     const [clientes, total] = await Promise.all([
-      clientesRepo.findAllClientes(limit, offset),
+      clientesRepo.findAllClientes(limit, offset, sort_by, sort_order),
       clientesRepo.countClientes()
     ]);
 

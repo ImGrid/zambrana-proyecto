@@ -14,7 +14,9 @@ export const getUsuariosApi = async (params?: ListUsuariosParams): Promise<Usuar
   const { data } = await api.get<UsuariosListResponse>('/usuarios', {
     params: {
       limit: params?.limit,
-      offset: params?.offset
+      offset: params?.offset,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order
     }
   });
   return data;

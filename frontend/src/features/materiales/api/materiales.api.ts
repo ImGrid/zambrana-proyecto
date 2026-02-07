@@ -17,7 +17,9 @@ export const getMaterialesApi = async (params?: ListMaterialesParams): Promise<M
     params: {
       limit: params?.limit,
       offset: params?.offset,
-      soloActivos: params?.soloActivos
+      soloActivos: params?.soloActivos,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order
     }
   });
   return data;

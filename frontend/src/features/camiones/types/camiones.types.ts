@@ -43,6 +43,8 @@ export interface ListCamionesParams {
   offset?: number;
   soloActivos?: boolean;
   soloDisponibles?: boolean;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 // Datos para crear camión

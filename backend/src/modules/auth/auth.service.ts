@@ -83,6 +83,9 @@ export async function registerUser(
     );
 
     const user = result.rows[0];
+    if (!user) {
+      return { success: false, message: 'Error al crear usuario' };
+    }
 
     return {
       success: true,
@@ -123,8 +126,11 @@ export async function loginUser(email: string, password: string): Promise<LoginR
     }
 
     const user = result.rows[0];
+    if (!user) {
+      return { success: false, message: 'Credenciales inválidas' };
+    }
 
-    // Verificar si el usuario está activo
+    // Verificar si el usuario esta activo
     if (!user.activo) {
       return {
         success: false,
@@ -173,11 +179,10 @@ export async function getUserById(id: number): Promise<User | null> {
       [id]
     );
 
-    if (result.rows.length === 0) {
+    const user = result.rows[0];
+    if (!user) {
       return null;
     }
-
-    const user = result.rows[0];
 
     return {
       id: user.id,
@@ -231,9 +236,12 @@ export async function registerPublicUser(data: {
     );
 
     const newUser = userResult.rows[0];
+    if (!newUser) {
+      await client.query('ROLLBACK');
+      return { success: false, message: 'Error al crear usuario' };
+    }
 
     // Crear cliente asociado al usuario
-    // Usar el nombre como razon_social por defecto
     await client.query(
       `INSERT INTO clientes (usuario_id, tipo_cliente_id, razon_social, telefono, created_at, updated_at)
        VALUES ($1, $2, $3, $4, NOW(), NOW())`,

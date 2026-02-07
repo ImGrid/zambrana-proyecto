@@ -39,12 +39,13 @@ const camionesRoutes: FastifyPluginAsyncZod = async (fastify) => {
       }
     },
     handler: async (request, reply) => {
-      // Acceso directo sin destructuring para mantener type safety
       const result = await listCamiones(
         request.query.limit,
         request.query.offset,
         request.query.soloActivos,
-        request.query.soloDisponibles
+        request.query.soloDisponibles,
+        request.query.sort_by,
+        request.query.sort_order
       );
 
       if (!result.success) {

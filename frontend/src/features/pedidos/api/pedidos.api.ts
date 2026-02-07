@@ -28,7 +28,9 @@ export const getPedidosApi = async (params?: ListPedidosParams): Promise<Pedidos
       estado_id: params?.estado_id,
       cliente_id: params?.cliente_id,
       fecha_desde: params?.fecha_desde,
-      fecha_hasta: params?.fecha_hasta
+      fecha_hasta: params?.fecha_hasta,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order,
     }
   });
   return data;

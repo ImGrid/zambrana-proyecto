@@ -47,9 +47,9 @@ const usuariosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       }
     },
     handler: async (request, reply) => {
-      const { limit, offset } = request.query;
+      const { limit, offset, sort_by, sort_order } = request.query;
 
-      const result = await listUsuarios(limit, offset);
+      const result = await listUsuarios(limit, offset, sort_by, sort_order);
 
       if (!result.success) {
         return reply.code(500).send({

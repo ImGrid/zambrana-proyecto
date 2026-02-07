@@ -44,12 +44,18 @@ export const userSchema = z.object({
 // Schema de respuesta de login
 export const loginResponseSchema = z.object({
   accessToken: z.string(),
+  refreshToken: z.string().optional(),
   user: userSchema
 });
 
 // Schema de respuesta de refresh
 export const refreshResponseSchema = z.object({
   accessToken: z.string()
+});
+
+// Schema de body para refresh (movil envia token en body)
+export const refreshBodySchema = z.object({
+  refreshToken: z.string().optional(),
 });
 
 // Schema de respuesta genérica de mensaje

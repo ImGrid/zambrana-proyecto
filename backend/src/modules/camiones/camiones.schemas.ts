@@ -5,7 +5,9 @@ export const listCamionesSchema = z.object({
   limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
   offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
   soloActivos: z.string().optional().transform(val => val === 'true'),
-  soloDisponibles: z.string().optional().transform(val => val === 'true')
+  soloDisponibles: z.string().optional().transform(val => val === 'true'),
+  sort_by: z.string().optional(),
+  sort_order: z.enum(['asc', 'desc']).optional()
 });
 
 // Schema para obtener camión por ID

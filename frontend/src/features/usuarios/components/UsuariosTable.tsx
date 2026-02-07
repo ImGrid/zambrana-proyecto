@@ -1,6 +1,6 @@
 import { Edit, Power } from 'lucide-react';
 import { Table } from '@/components/ui/Table';
-import type { Column } from '@/components/ui/Table';
+import type { Column, SortOrder } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import type { UsuarioListItem } from '../types/usuarios.types';
@@ -10,9 +10,12 @@ interface UsuariosTableProps {
   loading?: boolean;
   onEdit?: (id: number) => void;
   onToggleActivo?: (id: number) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
 }
 
-export const UsuariosTable = ({ usuarios, loading, onEdit, onToggleActivo }: UsuariosTableProps) => {
+export const UsuariosTable = ({ usuarios, loading, onEdit, onToggleActivo, sortBy, sortOrder, onSort }: UsuariosTableProps) => {
   const getRolColor = (rol: string) => {
     switch (rol) {
       case 'admin':
@@ -46,14 +49,17 @@ export const UsuariosTable = ({ usuarios, loading, onEdit, onToggleActivo }: Usu
   const columns: Column<UsuarioListItem>[] = [
     {
       header: 'Nombre',
+      sortKey: 'nombre',
       accessor: 'nombre',
     },
     {
       header: 'Email',
+      sortKey: 'email',
       accessor: 'email',
     },
     {
       header: 'Rol',
+      sortKey: 'rol',
       accessor: (row) => (
         <Badge variant={getRolColor(row.rol)}>
           {getRolLabel(row.rol)}
@@ -70,6 +76,7 @@ export const UsuariosTable = ({ usuarios, loading, onEdit, onToggleActivo }: Usu
     },
     {
       header: 'Fecha Creación',
+      sortKey: 'created_at',
       accessor: (row) => (
         <span className="text-cemento-900">
           {new Date(row.created_at).toLocaleDateString('es-BO', {
@@ -111,6 +118,9 @@ export const UsuariosTable = ({ usuarios, loading, onEdit, onToggleActivo }: Usu
       data={usuarios}
       loading={loading}
       emptyMessage="No se encontraron usuarios"
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
     />
   );
 };

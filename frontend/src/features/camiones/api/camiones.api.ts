@@ -16,7 +16,9 @@ export const getCamionesApi = async (params?: ListCamionesParams): Promise<Camio
       limit: params?.limit,
       offset: params?.offset,
       soloActivos: params?.soloActivos,
-      soloDisponibles: params?.soloDisponibles
+      soloDisponibles: params?.soloDisponibles,
+      sort_by: params?.sort_by,
+      sort_order: params?.sort_order
     }
   });
   return data;

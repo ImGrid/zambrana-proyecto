@@ -9,6 +9,7 @@ import { SelectFilter } from '@/components/ui/SelectFilter';
 import { Pagination } from '@/components/ui/Pagination';
 import { Button } from '@/components/ui/Button';
 import type { Camion } from '../types/camiones.types';
+import type { SortOrder } from '@/components/ui/Table';
 
 export const CamionesPage = () => {
   const [page, setPage] = useState(1);
@@ -17,6 +18,8 @@ export const CamionesPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedCamion, setSelectedCamion] = useState<Camion | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
 
   const limit = 20;
   const offset = (page - 1) * limit;
@@ -29,6 +32,8 @@ export const CamionesPage = () => {
     offset,
     soloActivos,
     soloDisponibles,
+    sort_by: sortBy,
+    sort_order: sortOrder,
   });
 
   const { data: camionData } = useCamion(selectedId);
@@ -76,6 +81,21 @@ export const CamionesPage = () => {
 
   const handleToggleMantenimiento = (id: number) => {
     toggleMantenimientoMutation.mutate(id);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortBy(undefined);
+        setSortOrder(undefined);
+      }
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+    setPage(1);
   };
 
   return (
@@ -136,6 +156,9 @@ export const CamionesPage = () => {
         onEdit={handleOpenEdit}
         onToggleActivo={handleToggleActivo}
         onToggleMantenimiento={handleToggleMantenimiento}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
       />
 
       <CamionForm

@@ -122,6 +122,8 @@ export interface ListPedidosParams {
   cliente_id?: number;
   fecha_desde?: string;
   fecha_hasta?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 // Respuesta de operaciones (create, confirmar, reasignar, cancelar)

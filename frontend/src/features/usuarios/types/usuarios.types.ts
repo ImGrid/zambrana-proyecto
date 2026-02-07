@@ -32,6 +32,8 @@ export interface UsuariosListResponse {
 export interface ListUsuariosParams {
   limit?: number;
   offset?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
 // Datos para actualizar usuario

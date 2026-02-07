@@ -24,13 +24,24 @@ export interface ConductorListItem {
   activo: boolean;
 }
 
+// Whitelist de campos ordenables
+const SORT_FIELDS: Record<string, string> = {
+  nombre_completo: 'c.nombre_completo',
+  ci: 'c.ci',
+  licencia_categoria: 'c.licencia_categoria',
+};
+
 // Listar todos los conductores con paginación
 export async function findAllConductores(
   limit: number = 20,
   offset: number = 0,
-  soloActivos: boolean = false
+  soloActivos: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ConductorListItem[]> {
   const whereClause = soloActivos ? 'WHERE c.activo = true' : '';
+  const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'c.nombre_completo';
+  const sortDirection = sort_order === 'desc' ? 'DESC' : 'ASC';
 
   const result = await pool.query<ConductorRow>(
     `SELECT
@@ -42,7 +53,7 @@ export async function findAllConductores(
       c.activo
     FROM conductores c
     ${whereClause}
-    ORDER BY c.nombre_completo ASC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );

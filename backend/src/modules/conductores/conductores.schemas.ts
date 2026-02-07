@@ -4,7 +4,9 @@ import { z } from 'zod';
 export const listConductoresSchema = z.object({
   limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
   offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
-  soloActivos: z.string().optional().transform(val => val === 'true')
+  soloActivos: z.string().optional().transform(val => val === 'true'),
+  sort_by: z.string().optional(),
+  sort_order: z.enum(['asc', 'desc']).optional()
 });
 
 // Schema para obtener conductor por ID
@@ -18,7 +20,7 @@ export const createConductorSchema = z.object({
   ci: z.string().min(3, 'CI debe tener al menos 3 caracteres').max(50),
   telefono: z.string().max(50).optional(),
   licencia_categoria: z.enum(['A', 'B', 'C', 'Profesional'], {
-    errorMap: () => ({ message: 'Categoría de licencia inválida. Debe ser: A, B, C o Profesional' })
+    error: 'Categoria de licencia invalida. Debe ser: A, B, C o Profesional'
   }).optional(),
   fecha_vencimiento_licencia: z.string().datetime().optional()
 });
@@ -29,7 +31,7 @@ export const updateConductorSchema = z.object({
   ci: z.string().min(3).max(50).optional(),
   telefono: z.string().max(50).optional(),
   licencia_categoria: z.enum(['A', 'B', 'C', 'Profesional'], {
-    errorMap: () => ({ message: 'Categoría de licencia inválida. Debe ser: A, B, C o Profesional' })
+    error: 'Categoria de licencia invalida. Debe ser: A, B, C o Profesional'
   }).optional(),
   fecha_vencimiento_licencia: z.string().datetime().optional()
 }).refine(data => Object.keys(data).length > 0, {

@@ -9,6 +9,7 @@ import { SelectFilter } from '@/components/ui/SelectFilter';
 import { Pagination } from '@/components/ui/Pagination';
 import { Button } from '@/components/ui/Button';
 import type { Conductor } from '../types/conductores.types';
+import type { SortOrder } from '@/components/ui/Table';
 
 export const ConductoresPage = () => {
   const [page, setPage] = useState(1);
@@ -17,6 +18,8 @@ export const ConductoresPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedConductor, setSelectedConductor] = useState<Conductor | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<SortOrder | undefined>(undefined);
 
   const limit = 20;
   const offset = (page - 1) * limit;
@@ -27,6 +30,8 @@ export const ConductoresPage = () => {
     limit,
     offset,
     soloActivos,
+    sort_by: sortBy,
+    sort_order: sortOrder,
   });
 
   const { data: conductorData } = useConductor(selectedId);
@@ -69,6 +74,21 @@ export const ConductoresPage = () => {
 
   const handleToggleActivo = (id: number) => {
     toggleActivoMutation.mutate(id);
+  };
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortBy(undefined);
+        setSortOrder(undefined);
+      }
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+    setPage(1);
   };
 
   return (
@@ -127,6 +147,9 @@ export const ConductoresPage = () => {
         loading={isLoading}
         onEdit={handleOpenEdit}
         onToggleActivo={handleToggleActivo}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSort}
       />
 
       <ConductorForm

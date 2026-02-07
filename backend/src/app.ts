@@ -16,6 +16,7 @@ import { createLoggerConfig } from './config/logger.js';
 import { globalRateLimitConfig } from './config/rate-limit.config.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import authPlugin from './plugins/auth.plugin.js';
+import schedulerPlugin from './plugins/scheduler.plugin.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import usuariosRoutes from './modules/usuarios/usuarios.routes.js';
 import materialesRoutes from './modules/materiales/materiales.routes.js';
@@ -122,6 +123,9 @@ export const buildApp = async () => {
 
   // Registrar plugin de autenticación
   await app.register(authPlugin);
+
+  // Registrar scheduler para refresh automatico de vistas materializadas
+  await app.register(schedulerPlugin);
 
   // Registrar rutas
   await app.register(healthRoutes, { prefix: '/api' });

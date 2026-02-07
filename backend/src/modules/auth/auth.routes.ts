@@ -6,6 +6,7 @@ import {
   registerPublicSchema,
   loginResponseSchema,
   refreshResponseSchema,
+  refreshBodySchema,
   messageResponseSchema,
   userSchema,
 } from './auth.schemas.js';
@@ -67,6 +68,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       return reply.code(201).send({
         accessToken,
+        refreshToken,
         user: result.user,
       });
     },
@@ -131,6 +133,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       return reply.code(201).send({
         accessToken,
+        refreshToken,
         user: result.user,
       });
     },
@@ -190,6 +193,7 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
 
       return {
         accessToken,
+        refreshToken,
         user: result.user,
       };
     },
@@ -203,8 +207,9 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       rateLimit: rateLimitConfigs.auth.general,
     },
     schema: {
-      description: 'Renovar access token usando el refresh token de la cookie',
+      description: 'Renovar access token usando refresh token (cookie o body)',
       tags: ['auth'],
+      body: refreshBodySchema,
       response: {
         200: refreshResponseSchema,
         401: z.object({
@@ -215,10 +220,19 @@ const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
     },
     handler: async (request, reply) => {
       try {
-        // Verificar refresh token desde cookie
-        await request.jwtVerify({ onlyCookie: true });
+        // Verificar refresh token desde body (movil) o cookie (web)
+        const bodyToken = (request.body as { refreshToken?: string })?.refreshToken;
+        let payload: { id: number; type?: string };
 
-        const payload = request.user as { id: number; type?: string };
+        if (bodyToken) {
+          // Ruta movil: token en body
+          const decoded = fastify.jwt.verify<{ id: number; type?: string }>(bodyToken);
+          payload = decoded;
+        } else {
+          // Ruta web: token en cookie
+          await request.jwtVerify({ onlyCookie: true });
+          payload = request.user as { id: number; type?: string };
+        }
 
         // Verificar que sea un refresh token
         if (payload.type !== 'refresh') {

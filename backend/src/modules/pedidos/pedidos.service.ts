@@ -50,6 +50,7 @@ interface PedidoListItem {
   id: number;
   codigo_seguimiento: string;
   cliente_razon_social: string;
+  cliente_nombre: string;
   estado_nombre: string;
   direccion_entrega: string;
   fecha_pedido: string;
@@ -58,6 +59,11 @@ interface PedidoListItem {
   monto_total: number;
   camion_placa: string | null;
   conductor_nombre: string | null;
+  latitud_entrega: number | null;
+  longitud_entrega: number | null;
+  distancia_km: number | null;
+  eta_minutos: number | null;
+  ruta_calculada: unknown;
 }
 
 interface CreatePedidoResult {
@@ -297,6 +303,8 @@ export async function listPedidos(
     conductor_asignado_id?: number;
     fecha_desde?: string;
     fecha_hasta?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   } = {}
 ): Promise<ListPedidosResult> {
   try {
@@ -657,10 +665,11 @@ export async function cancelarPedido(id: number, motivo: string): Promise<Create
       };
     }
 
-    if (pedido.estado_actual_id !== 1) {
+    // Solo PENDIENTE (1) y CONFIRMADO (2) se pueden cancelar
+    if (pedido.estado_actual_id !== 1 && pedido.estado_actual_id !== 2) {
       return {
         success: false,
-        message: 'Solo se pueden cancelar pedidos en estado PENDIENTE',
+        message: 'Solo se pueden cancelar pedidos en estado PENDIENTE o CONFIRMADO',
       };
     }
 

@@ -1,5 +1,5 @@
 import { Table } from '@/components/ui/Table';
-import type { Column } from '@/components/ui/Table';
+import type { Column, SortOrder } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
@@ -12,9 +12,12 @@ interface PedidosTableProps {
   onVerDetalle?: (pedido: PedidoListItem) => void;
   onAprobar?: (pedido: PedidoListItem) => void;
   onRechazar?: (pedido: PedidoListItem) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
 }
 
-export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRechazar }: PedidosTableProps) => {
+export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRechazar, sortBy, sortOrder, onSort }: PedidosTableProps) => {
   const getEstadoBadgeVariant = (estadoNombre: string) => {
     const estado = estadoNombre.toUpperCase();
     if (estado.includes('PENDIENTE')) return ESTADO_BADGE_VARIANTS[EstadoPedido.PENDIENTE];
@@ -31,7 +34,8 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
 
   const columns: Column<PedidoListItem>[] = [
     {
-      header: 'Código',
+      header: 'Codigo',
+      sortKey: 'codigo_seguimiento',
       accessor: (row) => (
         <span className="font-mono text-xs text-cemento-700">
           {row.codigo_seguimiento}
@@ -40,10 +44,12 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     },
     {
       header: 'Cliente',
+      sortKey: 'cliente_razon_social',
       accessor: 'cliente_razon_social',
     },
     {
       header: 'Estado',
+      sortKey: 'estado_nombre',
       accessor: (row) => (
         <Badge variant={getEstadoBadgeVariant(row.estado_nombre)}>
           {row.estado_nombre}
@@ -52,6 +58,7 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     },
     {
       header: 'Fecha',
+      sortKey: 'fecha_pedido',
       accessor: (row) => (
         <span className="text-cemento-900 text-sm whitespace-nowrap">
           {new Date(row.fecha_pedido).toLocaleDateString('es-BO', {
@@ -64,6 +71,7 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
     },
     {
       header: 'Monto',
+      sortKey: 'monto_total',
       accessor: (row) => (
         <span className="text-cemento-900 font-bold whitespace-nowrap">
           Bs. {row.monto_total.toFixed(2)}
@@ -125,6 +133,9 @@ export const PedidosTable = ({ pedidos, loading, onVerDetalle, onAprobar, onRech
       data={pedidos}
       loading={loading}
       emptyMessage="No se encontraron pedidos"
+      sortBy={sortBy}
+      sortOrder={sortOrder}
+      onSort={onSort}
     />
   );
 };

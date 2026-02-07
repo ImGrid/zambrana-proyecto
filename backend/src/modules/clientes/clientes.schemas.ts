@@ -3,7 +3,9 @@ import { z } from 'zod';
 // Schema para listar clientes (query params)
 export const listClientesSchema = z.object({
   limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 20),
-  offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0)
+  offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
+  sort_by: z.string().optional(),
+  sort_order: z.enum(['asc', 'desc']).optional()
 });
 
 // Schema para obtener cliente por ID

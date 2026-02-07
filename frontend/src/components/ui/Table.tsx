@@ -1,10 +1,14 @@
 import { cn } from '@/lib/utils';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 import { TableSkeleton } from './TableSkeleton';
+
+export type SortOrder = 'asc' | 'desc';
 
 export interface Column<T> {
   header: string;
   accessor: keyof T | ((row: T) => React.ReactNode);
+  sortKey?: string;
   className?: string;
 }
 
@@ -14,6 +18,9 @@ interface TableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+  onSort?: (sortKey: string) => void;
   className?: string;
 }
 
@@ -23,6 +30,9 @@ export function Table<T extends { id?: string | number }>({
   loading,
   emptyMessage = 'No hay datos disponibles',
   onRowClick,
+  sortBy,
+  sortOrder,
+  onSort,
   className,
 }: TableProps<T>) {
   if (loading) {
@@ -46,17 +56,35 @@ export function Table<T extends { id?: string | number }>({
         <table className="min-w-full divide-y divide-piedra-200">
           <thead className="bg-cemento-50">
             <tr>
-              {columns.map((column, index) => (
-                <th
-                  key={index}
-                  className={cn(
-                    'px-6 py-3 text-left text-xs font-medium text-cemento-500 uppercase tracking-wider',
-                    column.className
-                  )}
-                >
-                  {column.header}
-                </th>
-              ))}
+              {columns.map((column, index) => {
+                const isSortable = !!column.sortKey && !!onSort;
+                const isActive = isSortable && sortBy === column.sortKey;
+
+                return (
+                  <th
+                    key={index}
+                    className={cn(
+                      'px-6 py-3 text-left text-xs font-medium text-cemento-500 uppercase tracking-wider',
+                      isSortable && 'cursor-pointer select-none hover:text-cemento-700',
+                      column.className
+                    )}
+                    onClick={isSortable ? () => onSort(column.sortKey!) : undefined}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {column.header}
+                      {isSortable && (
+                        isActive ? (
+                          sortOrder === 'asc'
+                            ? <ChevronUp className="h-3.5 w-3.5" />
+                            : <ChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronsUpDown className="h-3.5 w-3.5 opacity-40" />
+                        )
+                      )}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-piedra-200">

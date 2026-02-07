@@ -47,11 +47,13 @@ interface UpdateConductorResult {
 export async function listConductores(
   limit: number = 20,
   offset: number = 0,
-  soloActivos: boolean = false
+  soloActivos: boolean = false,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ListConductoresResult> {
   try {
     const [conductores, total] = await Promise.all([
-      conductoresRepo.findAllConductores(limit, offset, soloActivos),
+      conductoresRepo.findAllConductores(limit, offset, soloActivos, sort_by, sort_order),
       conductoresRepo.countConductores(soloActivos)
     ]);
 

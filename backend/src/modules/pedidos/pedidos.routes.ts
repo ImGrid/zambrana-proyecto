@@ -165,7 +165,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
       },
     },
     handler: async (request, reply) => {
-      const { limit, offset, estado_id, cliente_id, fecha_desde, fecha_hasta } = request.query;
+      const { limit, offset, estado_id, cliente_id, fecha_desde, fecha_hasta, sort_by, sort_order } = request.query;
       const currentUser = request.user as { id: number; rol: string };
 
       // Filtros base
@@ -236,6 +236,8 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
         conductor_asignado_id: filtroConductorId,
         fecha_desde,
         fecha_hasta,
+        sort_by,
+        sort_order,
       });
 
       if (!result.success) {

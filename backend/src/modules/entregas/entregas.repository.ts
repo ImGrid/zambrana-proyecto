@@ -1,5 +1,4 @@
 import { pool } from '../../database/postgres/pool.js';
-import { PoolClient } from 'pg';
 
 /**
  * Tipos para entregas
@@ -138,6 +137,9 @@ export async function createEntrega(
     );
 
     const entrega = entregaResult.rows[0];
+    if (!entrega) {
+      throw new Error('Error al crear entrega');
+    }
 
     // Actualizar estado del pedido a EN_CAMINO (estado_actual_id = 3)
     await client.query(
@@ -216,11 +218,7 @@ export async function findEntregaById(id: number): Promise<EntregaConDetalle | n
     [id]
   );
 
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  return result.rows[0];
+  return result.rows[0] ?? null;
 }
 
 /**
@@ -237,11 +235,7 @@ export async function findEntregaByPedidoId(pedido_id: number): Promise<Entrega 
     [pedido_id]
   );
 
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  return result.rows[0];
+  return result.rows[0] ?? null;
 }
 
 /**
@@ -391,11 +385,10 @@ export async function finalizarEntrega(
       [id]
     );
 
-    if (entregaCheck.rows.length === 0) {
+    const entrega = entregaCheck.rows[0];
+    if (!entrega) {
       throw new Error('Entrega no encontrada o ya fue finalizada');
     }
-
-    const entrega = entregaCheck.rows[0];
 
     // Actualizar la entrega con calculo automatico de duracion_minutos
     const entregaResult = await client.query<Entrega>(
@@ -414,6 +407,9 @@ export async function finalizarEntrega(
     );
 
     const entregaFinalizada = entregaResult.rows[0];
+    if (!entregaFinalizada) {
+      throw new Error('Error al finalizar entrega');
+    }
 
     // Actualizar estado del pedido a ENTREGADO (ID = 7)
     await client.query(
@@ -487,11 +483,10 @@ export async function cancelarEntrega(
       [id]
     );
 
-    if (entregaCheck.rows.length === 0) {
+    const entrega = entregaCheck.rows[0];
+    if (!entrega) {
       throw new Error('Entrega no encontrada o no se puede cancelar');
     }
-
-    const entrega = entregaCheck.rows[0];
 
     // Actualizar la entrega (cancelada se marca poniendo observaciones)
     const entregaResult = await client.query<Entrega>(
@@ -503,6 +498,11 @@ export async function cancelarEntrega(
        RETURNING *`,
       [id, 'CANCELADA: ' + motivo]
     );
+
+    const entregaCancelada = entregaResult.rows[0];
+    if (!entregaCancelada) {
+      throw new Error('Error al cancelar entrega');
+    }
 
     // Revertir estado del pedido a CONFIRMADO (estado_id = 2)
     await client.query(
@@ -541,7 +541,7 @@ export async function cancelarEntrega(
 
     await client.query('COMMIT');
 
-    return entregaResult.rows[0];
+    return entregaCancelada;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -595,7 +595,7 @@ export async function contarEntregasPorEstado(
 
   const result = await pool.query<{ count: string }>(query);
 
-  return parseInt(result.rows[0].count, 10);
+  return parseInt(result.rows[0]?.count || '0', 10);
 }
 
 // Obtiene el ultimo evento de movimiento (DETENIDO o REANUDO) de una entrega

@@ -203,8 +203,18 @@ export async function createPedido(
 // FUNCIONES DE CONSULTA
 // =====================================================
 
+// Whitelist de campos permitidos para ORDER BY (previene SQL injection)
+const SORT_FIELDS: Record<string, string> = {
+  fecha_pedido: 'p.fecha_pedido',
+  monto_total: 'p.monto_total',
+  codigo_seguimiento: 'p.codigo_seguimiento',
+  cliente_razon_social: 'c.razon_social',
+  estado_nombre: 'e.nombre',
+  total_m3: 'p.total_m3',
+};
+
 /**
- * Listar pedidos con filtros
+ * Listar pedidos con filtros y ordenamiento
  */
 export async function findAllPedidos(
   limit: number = 20,
@@ -215,6 +225,8 @@ export async function findAllPedidos(
     conductor_asignado_id?: number;
     fecha_desde?: string;
     fecha_hasta?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   } = {}
 ): Promise<PedidoRow[]> {
   let query = `
@@ -276,7 +288,11 @@ export async function findAllPedidos(
     paramIndex++;
   }
 
-  query += ` ORDER BY p.fecha_pedido DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  // Ordenamiento con whitelist
+  const sortColumn = (filters.sort_by && SORT_FIELDS[filters.sort_by]) || 'p.fecha_pedido';
+  const sortDirection = filters.sort_order === 'asc' ? 'ASC' : 'DESC';
+
+  query += ` ORDER BY ${sortColumn} ${sortDirection} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
   params.push(limit, offset);
 
   const result = await pool.query<PedidoRow>(query, params);
@@ -595,7 +611,8 @@ export async function reasignarRecursos(
 }
 
 /**
- * Cancelar pedido (solo si está PENDIENTE, no devuelve stock)
+ * Cancelar pedido (PENDIENTE o CONFIRMADO)
+ * Si es CONFIRMADO, ejecuta transaccion compensatoria para devolver stock
  */
 export async function cancelarPedido(pedidoId: number, motivo: string): Promise<boolean> {
   const client: PoolClient = await pool.connect();
@@ -603,7 +620,7 @@ export async function cancelarPedido(pedidoId: number, motivo: string): Promise<
   try {
     await client.query('BEGIN');
 
-    // Verificar estado actual
+    // Bloquear pedido para evitar concurrencia
     const pedidoResult = await client.query<PedidoRow>(
       'SELECT * FROM pedidos WHERE id = $1 FOR UPDATE',
       [pedidoId]
@@ -620,30 +637,94 @@ export async function cancelarPedido(pedidoId: number, motivo: string): Promise<
       return false;
     }
 
-    // Solo PENDIENTE se puede cancelar
-    if (pedido.estado_actual_id !== 1) {
+    // Idempotencia: si ya esta cancelado, retornar exito
+    if (pedido.estado_actual_id === 8) {
+      await client.query('ROLLBACK');
+      return true;
+    }
+
+    // Solo PENDIENTE (1) y CONFIRMADO (2) se pueden cancelar
+    if (pedido.estado_actual_id !== 1 && pedido.estado_actual_id !== 2) {
       await client.query('ROLLBACK');
       return false;
     }
 
-    // Actualizar a CANCELADO
+    // Si es CONFIRMADO, ejecutar transaccion compensatoria de stock
+    if (pedido.estado_actual_id === 2) {
+      // Obtener detalles del pedido
+      const detallesResult = await client.query<DetallePedidoRow>(
+        'SELECT * FROM detalle_pedidos WHERE pedido_id = $1 ORDER BY material_id ASC',
+        [pedidoId]
+      );
+
+      // Restaurar stock para cada material (orden ascendente para evitar deadlocks)
+      for (const detalle of detallesResult.rows) {
+        // Restaurar stock atomicamente
+        const updateStockResult = await client.query<{ stock_actual: number }>(
+          `UPDATE materiales
+           SET stock_actual = stock_actual + $1,
+               updated_at = NOW()
+           WHERE id = $2
+           RETURNING stock_actual`,
+          [detalle.cantidad_m3, detalle.material_id]
+        );
+
+        if (updateStockResult.rowCount === 0) {
+          await client.query('ROLLBACK');
+          return false;
+        }
+
+        // Registrar movimiento de devolucion
+        const stockNuevo = Number(updateStockResult.rows[0]?.stock_actual || 0);
+        const stockAnterior = stockNuevo - Number(detalle.cantidad_m3);
+
+        await client.query(
+          `INSERT INTO movimientos_stock (
+            material_id,
+            tipo_movimiento_id,
+            cantidad,
+            stock_anterior,
+            stock_nuevo,
+            motivo,
+            usuario_id,
+            pedido_id
+          ) VALUES ($1, 4, $2, $3, $4, $5, NULL, $6)`,
+          [
+            detalle.material_id,
+            Math.abs(detalle.cantidad_m3),
+            stockAnterior,
+            stockNuevo,
+            `Devolucion por cancelacion de pedido ${pedido.codigo_seguimiento}`,
+            pedidoId,
+          ]
+        );
+      }
+    }
+
+    // Actualizar pedido a CANCELADO y limpiar asignaciones
     await client.query(
       `UPDATE pedidos
        SET estado_actual_id = 8,
            motivo_rechazo = $1,
+           camion_asignado_id = NULL,
+           conductor_asignado_id = NULL,
            updated_at = NOW()
        WHERE id = $2`,
       [motivo, pedidoId]
     );
 
-    // Registrar en historial
+    // Registrar en historial con detalle del tipo de cancelacion
+    const comentario = pedido.estado_actual_id === 2
+      ? `Pedido confirmado cancelado (stock devuelto): ${motivo}`
+      : `Pedido pendiente cancelado: ${motivo}`;
+
     await client.query(
       `INSERT INTO historial_estado_pedido (
         pedido_id,
         estado_id,
         comentario
       ) VALUES ($1, 8, $2)`,
-      [pedidoId, `Pedido cancelado: ${motivo}`]
+      [pedidoId, comentario]
     );
 
     await client.query('COMMIT');
@@ -725,48 +806,52 @@ export async function getEstadisticasPedidos(dias: number = 30) {
     FROM pedidos
   `);
 
-  // Pedidos en el período
-  const pedidosPeriodoResult = await pool.query<{ total: string }>(`
-    SELECT COUNT(*) as total
+  // Pedidos en el periodo
+  const pedidosPeriodoResult = await pool.query<{ total: string }>(
+    `SELECT COUNT(*) as total
     FROM pedidos
-    WHERE fecha_pedido >= CURRENT_DATE - INTERVAL '${dias} days'
-  `);
+    WHERE fecha_pedido >= CURRENT_DATE - $1 * INTERVAL '1 day'`,
+    [dias]
+  );
 
-  // Monto total del período (solo pedidos confirmados/entregados/en camino)
-  const montoPeriodoResult = await pool.query<{ total: string }>(`
-    SELECT COALESCE(SUM(monto_total), 0) as total
+  // Monto total del periodo (solo pedidos confirmados/entregados/en camino)
+  const montoPeriodoResult = await pool.query<{ total: string }>(
+    `SELECT COALESCE(SUM(monto_total), 0) as total
     FROM pedidos
-    WHERE fecha_pedido >= CURRENT_DATE - INTERVAL '${dias} days'
-      AND estado_actual_id IN (2, 3, 7)
-  `);
+    WHERE fecha_pedido >= CURRENT_DATE - $1 * INTERVAL '1 day'
+      AND estado_actual_id IN (2, 3, 7)`,
+    [dias]
+  );
 
-  // Volumen total del período (solo pedidos confirmados/entregados/en camino)
-  const volumenPeriodoResult = await pool.query<{ total: string }>(`
-    SELECT COALESCE(SUM(total_m3), 0) as total
+  // Volumen total del periodo (solo pedidos confirmados/entregados/en camino)
+  const volumenPeriodoResult = await pool.query<{ total: string }>(
+    `SELECT COALESCE(SUM(total_m3), 0) as total
     FROM pedidos
-    WHERE fecha_pedido >= CURRENT_DATE - INTERVAL '${dias} days'
-      AND estado_actual_id IN (2, 3, 7)
-  `);
+    WHERE fecha_pedido >= CURRENT_DATE - $1 * INTERVAL '1 day'
+      AND estado_actual_id IN (2, 3, 7)`,
+    [dias]
+  );
 
-  // Cliente top del período
+  // Cliente top del periodo
   const topClienteResult = await pool.query<{
     id: number;
     razon_social: string;
     total_pedidos: string;
     monto_total: string;
-  }>(`
-    SELECT
+  }>(
+    `SELECT
       c.id,
       c.razon_social,
       COUNT(p.id) as total_pedidos,
       SUM(p.monto_total) as monto_total
     FROM clientes c
     INNER JOIN pedidos p ON c.id = p.cliente_id
-    WHERE p.fecha_pedido >= CURRENT_DATE - INTERVAL '${dias} days'
+    WHERE p.fecha_pedido >= CURRENT_DATE - $1 * INTERVAL '1 day'
     GROUP BY c.id, c.razon_social
     ORDER BY monto_total DESC
-    LIMIT 1
-  `);
+    LIMIT 1`,
+    [dias]
+  );
 
   const topCliente = topClienteResult.rows[0] || null;
   const totales = totalesResult.rows[0];

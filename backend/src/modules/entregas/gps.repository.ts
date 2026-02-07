@@ -103,11 +103,7 @@ export async function obtenerUltimaPosicion(entrega_id: number): Promise<Posicio
     [entrega_id]
   );
 
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  return result.rows[0];
+  return result.rows[0] ?? null;
 }
 
 /**
@@ -167,7 +163,7 @@ export async function contarPosicionesEntrega(entrega_id: number): Promise<numbe
     [entrega_id]
   );
 
-  return parseInt(result.rows[0].count, 10);
+  return parseInt(result.rows[0]?.count || '0', 10);
 }
 
 /**
@@ -221,8 +217,8 @@ export async function calcularVelocidadPromedio(
     FROM posiciones_gps
     WHERE entrega_id = $1
       AND velocidad_kmh IS NOT NULL
-      AND timestamp >= NOW() - INTERVAL '${minutos} minutes'`,
-    [entrega_id]
+      AND timestamp >= NOW() - $2 * INTERVAL '1 minute'`,
+    [entrega_id, minutos]
   );
 
   return result.rows[0]?.velocidad_promedio || 0;

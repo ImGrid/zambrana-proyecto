@@ -48,11 +48,13 @@ interface ChangePasswordResult {
 // Listar usuarios con paginación
 export async function listUsuarios(
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<ListUsuariosResult> {
   try {
     const [usuarios, total] = await Promise.all([
-      usuariosRepo.findAllUsuarios(limit, offset),
+      usuariosRepo.findAllUsuarios(limit, offset, sort_by, sort_order),
       usuariosRepo.countUsuarios()
     ]);
 

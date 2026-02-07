@@ -22,11 +22,24 @@ export interface UsuarioListItem {
   created_at: Date;
 }
 
+// Whitelist de campos ordenables
+const SORT_FIELDS: Record<string, string> = {
+  nombre: 'u.nombre',
+  email: 'u.email',
+  rol: 'r.nombre',
+  created_at: 'u.created_at',
+};
+
 // Listar todos los usuarios con paginacion
 export async function findAllUsuarios(
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  sort_by?: string,
+  sort_order?: 'asc' | 'desc'
 ): Promise<UsuarioListItem[]> {
+  const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'u.created_at';
+  const sortDirection = sort_order === 'asc' ? 'ASC' : 'DESC';
+
   const result = await pool.query<UsuarioRow>(
     `SELECT
       u.id,
@@ -37,7 +50,7 @@ export async function findAllUsuarios(
       r.nombre as rol
     FROM usuarios u
     INNER JOIN roles_usuario r ON u.rol_id = r.id
-    ORDER BY u.created_at DESC
+    ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );

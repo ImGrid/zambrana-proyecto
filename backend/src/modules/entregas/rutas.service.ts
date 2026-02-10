@@ -135,7 +135,7 @@ export async function calcularRutaHastaPedido(pedido_id: number): Promise<RutaCo
  * @param lon2 - Longitud del punto 2
  * @returns Distancia en kilometros
  */
-function calcularDistanciaHaversine(
+export function calcularDistanciaHaversine(
   lat1: number,
   lon1: number,
   lat2: number,
@@ -163,40 +163,6 @@ function calcularDistanciaHaversine(
  */
 function gradosARadianes(grados: number): number {
   return grados * (Math.PI / 180);
-}
-
-/**
- * Valida si una posicion GPS esta cerca de la ruta calculada
- *
- * Uso: Detectar desviaciones del camion durante la entrega
- *
- * @param latitud - Latitud actual del GPS
- * @param longitud - Longitud actual del GPS
- * @param ruta - Ruta calculada previamente
- * @param tolerancia_km - Distancia maxima aceptable de desviacion (default: 1 km)
- * @returns true si esta dentro de la tolerancia
- */
-export function validarPosicionCercaDeRuta(
-  latitud: number,
-  longitud: number,
-  ruta: RutaCalculada,
-  tolerancia_km: number = 1.0
-): boolean {
-  // Verificar distancia a cada nodo de la ruta
-  for (const nodo of ruta.nodos) {
-    const distancia = calcularDistanciaHaversine(
-      latitud,
-      longitud,
-      nodo.latitud,
-      nodo.longitud
-    );
-
-    if (distancia <= tolerancia_km) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 /**
@@ -268,51 +234,84 @@ export function estaDetenido(
   return velocidad_promedio_kmh < umbral_kmh;
 }
 
+// Factores de conversion a metros para latitud de Cochabamba (~-17.39)
+const METROS_POR_GRADO_LAT = 111139;
+const METROS_POR_GRADO_LON = 111139 * Math.cos((-17.39 * Math.PI) / 180); // ~106100m
+
+// Calcula distancia perpendicular de un punto a un segmento (A->B)
+// Usa aproximacion plana (flat-earth) valida para distancias cortas en Cochabamba
+// Retorna distancia en kilometros
+function distanciaPuntoASegmento(
+  puntoLat: number,
+  puntoLon: number,
+  segALat: number,
+  segALon: number,
+  segBLat: number,
+  segBLon: number
+): number {
+  // Convertir a metros locales
+  const px = (puntoLon - segALon) * METROS_POR_GRADO_LON;
+  const py = (puntoLat - segALat) * METROS_POR_GRADO_LAT;
+  const bx = (segBLon - segALon) * METROS_POR_GRADO_LON;
+  const by = (segBLat - segALat) * METROS_POR_GRADO_LAT;
+
+  // Longitud del segmento al cuadrado
+  const segLenSq = bx * bx + by * by;
+
+  // Si el segmento es un punto, retornar distancia directa
+  if (segLenSq === 0) {
+    const dist = Math.sqrt(px * px + py * py);
+    return dist / 1000;
+  }
+
+  // Proyeccion del punto sobre el segmento, clampeado a [0,1]
+  const t = Math.max(0, Math.min(1, (px * bx + py * by) / segLenSq));
+
+  // Punto mas cercano en el segmento
+  const closestX = t * bx;
+  const closestY = t * by;
+
+  // Distancia al punto mas cercano
+  const dx = px - closestX;
+  const dy = py - closestY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  return dist / 1000;
+}
+
 /**
- * Obtiene informacion de puntos de interes cercanos a una posicion
+ * Calcula la distancia minima desde un punto GPS a la ruta planificada
  *
- * Uso futuro: Detectar si el camion esta en zona de obras, trafico, etc
- * Por ahora retorna los nodos de la ruta que estan cerca
- *
- * @param latitud - Latitud de la posicion
- * @param longitud - Longitud de la posicion
- * @param ruta - Ruta calculada
- * @param radio_km - Radio de busqueda en kilometros
- * @returns Array de nodos cercanos
+ * @param lat - Latitud del punto GPS
+ * @param lon - Longitud del punto GPS
+ * @param nodos - Array de nodos de la ruta con latitud y longitud
+ * @returns Distancia minima en kilometros
  */
-export function obtenerPuntosInteresesCercanos(
-  latitud: number,
-  longitud: number,
-  ruta: RutaCalculada,
-  radio_km: number = 2.0
-): Array<{
-  nodo: {
-    id: string;
-    nombre: string;
-    tipo: string;
-    latitud: number;
-    longitud: number;
-  };
-  distancia_km: number;
-}> {
-  const puntosInteres = [];
+export function calcularDistanciaDesdeRuta(
+  lat: number,
+  lon: number,
+  nodos: Array<{ latitud: number; longitud: number }>
+): number {
+  if (nodos.length < 2) return 0;
 
-  for (const nodo of ruta.nodos) {
-    const distancia = calcularDistanciaHaversine(
-      latitud,
-      longitud,
-      nodo.latitud,
-      nodo.longitud
+  let distanciaMinima = Infinity;
+
+  for (let i = 0; i < nodos.length - 1; i++) {
+    const nodoA = nodos[i]!;
+    const nodoB = nodos[i + 1]!;
+    const dist = distanciaPuntoASegmento(
+      lat,
+      lon,
+      nodoA.latitud,
+      nodoA.longitud,
+      nodoB.latitud,
+      nodoB.longitud
     );
-
-    if (distancia <= radio_km) {
-      puntosInteres.push({
-        nodo,
-        distancia_km: distancia
-      });
+    if (dist < distanciaMinima) {
+      distanciaMinima = dist;
     }
   }
 
-  // Ordenar por distancia ascendente
-  return puntosInteres.sort((a, b) => a.distancia_km - b.distancia_km);
+  return distanciaMinima;
 }
+

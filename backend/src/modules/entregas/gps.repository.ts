@@ -13,9 +13,6 @@ export interface PosicionGPS {
   velocidad_kmh: number | null;
   direccion_grados: number | null;
   precision_metros: number | null;
-  nodo_cercano_id: string | null;
-  distancia_nodo_metros: number | null;
-  en_ruta: boolean | null;
   timestamp: Date;
 }
 
@@ -64,10 +61,10 @@ export async function insertarPosicionGPS(
       camion_id,
       latitud,
       longitud,
-      velocidad_kmh || null,
-      direccion_grados || null,
-      precision_metros || null,
-      timestamp || null,
+      velocidad_kmh ?? null,
+      direccion_grados ?? null,
+      precision_metros ?? null,
+      timestamp ?? null,
     ]
   );
 }
@@ -92,9 +89,6 @@ export async function obtenerUltimaPosicion(entrega_id: number): Promise<Posicio
       velocidad_kmh,
       direccion_grados,
       precision_metros,
-      nodo_cercano_id,
-      distancia_nodo_metros,
-      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1
@@ -132,9 +126,6 @@ export async function obtenerPosicionesEntrega(
       velocidad_kmh,
       direccion_grados,
       precision_metros,
-      nodo_cercano_id,
-      distancia_nodo_metros,
-      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1
@@ -250,9 +241,6 @@ export async function obtenerPosicionesPorRango(
       velocidad_kmh,
       direccion_grados,
       precision_metros,
-      nodo_cercano_id,
-      distancia_nodo_metros,
-      en_ruta,
       timestamp
     FROM posiciones_gps
     WHERE entrega_id = $1

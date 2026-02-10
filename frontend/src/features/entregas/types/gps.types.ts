@@ -12,8 +12,5 @@ export interface PosicionGPS {
   velocidad_kmh: number | null;
   direccion_grados: number | null;
   precision_metros: number | null;
-  nodo_cercano_id: string | null;
-  distancia_nodo_metros: number | null;
-  en_ruta: boolean | null;
   timestamp: Date;
 }

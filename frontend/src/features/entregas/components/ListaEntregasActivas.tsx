@@ -16,22 +16,27 @@ export function ListaEntregasActivas({
   selectedEntregaId,
   onSelectEntrega,
 }: ListaEntregasActivasProps) {
-  const [filtro, setFiltro] = useState<'todas' | 'detenidas' | 'movimiento'>('todas');
+  const [filtro, setFiltro] = useState<'todas' | 'desviadas' | 'detenidas' | 'movimiento'>('todas');
 
-  // Filtrar entregas según el filtro seleccionado
+  // Filtrar entregas segun el filtro seleccionado
   const entregasFiltradas = entregas.filter((entrega) => {
+    if (filtro === 'desviadas') return entrega.esta_desviado;
     if (filtro === 'detenidas') return entrega.esta_detenido;
-    if (filtro === 'movimiento') return !entrega.esta_detenido;
+    if (filtro === 'movimiento') return !entrega.esta_detenido && !entrega.esta_desviado;
     return true;
   });
 
-  // Ordenar: detenidas primero, luego por hora de salida
+  // Ordenar: desviadas primero, luego detenidas, luego en movimiento
   const entregasOrdenadas = [...entregasFiltradas].sort((a, b) => {
-    // Primero ordenar por estado (detenidos primero)
+    // Desviadas tienen maxima prioridad
+    if (a.esta_desviado && !b.esta_desviado) return -1;
+    if (!a.esta_desviado && b.esta_desviado) return 1;
+
+    // Luego detenidas
     if (a.esta_detenido && !b.esta_detenido) return -1;
     if (!a.esta_detenido && b.esta_detenido) return 1;
 
-    // Luego por hora de salida (más recientes primero)
+    // Luego por hora de salida (mas recientes primero)
     const horaA = a.hora_salida_planta ? new Date(a.hora_salida_planta).getTime() : 0;
     const horaB = b.hora_salida_planta ? new Date(b.hora_salida_planta).getTime() : 0;
     return horaB - horaA;
@@ -59,6 +64,16 @@ export function ListaEntregasActivas({
             }`}
           >
             Todas
+          </button>
+          <button
+            onClick={() => setFiltro('desviadas')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              filtro === 'desviadas'
+                ? 'bg-error-500 text-white'
+                : 'bg-cemento-100 text-cemento-700 hover:bg-cemento-200'
+            }`}
+          >
+            Desviadas
           </button>
           <button
             onClick={() => setFiltro('detenidas')}
@@ -89,9 +104,11 @@ export function ListaEntregasActivas({
           <div className="text-center py-8 text-cemento-500 text-sm">
             {filtro === 'todas'
               ? 'No hay entregas activas en este momento'
-              : filtro === 'detenidas'
-                ? 'No hay entregas detenidas'
-                : 'No hay entregas en movimiento'}
+              : filtro === 'desviadas'
+                ? 'No hay entregas desviadas'
+                : filtro === 'detenidas'
+                  ? 'No hay entregas detenidas'
+                  : 'No hay entregas en movimiento'}
           </div>
         ) : (
           entregasOrdenadas.map((entrega) => (

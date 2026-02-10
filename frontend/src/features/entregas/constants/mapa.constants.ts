@@ -41,6 +41,9 @@ export const MAPA_COLORES = {
   // Camión detenido
   camionDetenido: '#f59e0b',
 
+  // Camión desviado de la ruta
+  camionDesviado: '#ef4444',
+
   // Cliente/destino
   cliente: '#ef4444',
 

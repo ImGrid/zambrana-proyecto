@@ -86,6 +86,7 @@ export function MonitorGPSPage() {
                       clienteNombre={entrega.pedido.cliente.razon_social}
                       velocidadPromedio={entrega.velocidad_promedio_kmh}
                       destacado={selectedEntregaId === entrega.id}
+                      estaDesviado={entrega.esta_desviado}
                     />
                   )}
                 </div>

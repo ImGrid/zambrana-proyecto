@@ -6,6 +6,9 @@ import { pool } from '../../database/postgres/pool.js';
 // Periodo de gracia en minutos despues de un evento REANUDO
 const PERIODO_GRACIA_MINUTOS = 1;
 
+// Umbral de desviacion en km (200 metros)
+const UMBRAL_DESVIACION_KM = 0.2;
+
 /**
  * Inicia una nueva entrega para un pedido
  *
@@ -165,6 +168,11 @@ export async function recibirPosicionGPS(
     nuevoETA.setMinutes(nuevoETA.getMinutes() + Math.ceil(tiempoRestante));
   }
 
+  // Detectar desviacion de ruta en tiempo real
+  if (determinarSiDesviado(entrega, latitud, longitud)) {
+    warnings.push('El camion se ha desviado de la ruta planificada');
+  }
+
   return {
     success: true,
     warnings,
@@ -239,6 +247,22 @@ export async function finalizarEntrega(
     observaciones
   );
 
+  // Persistir metricas de desviacion en la tabla entregas
+  if (desviacionRuta !== null || distanciaPlanificada !== null) {
+    const porcentajeAdherencia = desviacionRuta !== null
+      ? Math.max(0, (1 - desviacionRuta) * 100)
+      : null;
+    const desviacionesDetectadas = (desviacionRuta !== null && desviacionRuta > 0.15) ? 1 : 0;
+
+    await pool.query(
+      `UPDATE entregas
+       SET desviaciones_detectadas = $1,
+           porcentaje_adherencia = $2
+       WHERE id = $3`,
+      [desviacionesDetectadas, porcentajeAdherencia, entrega_id]
+    );
+  }
+
   // Calcular tiempo real de entrega
   const tiempoRealMinutos = entrega.hora_salida_planta && entregaFinalizada.hora_llegada_cliente
     ? Math.round((entregaFinalizada.hora_llegada_cliente.getTime() - entrega.hora_salida_planta.getTime()) / (1000 * 60))
@@ -288,6 +312,20 @@ async function determinarSiDetenido(
   return rutasService.estaDetenido(velocidadPromedio);
 }
 
+// Determina si el vehiculo esta desviado de la ruta planificada
+// Calcula distancia minima del punto GPS a todos los segmentos de la ruta
+function determinarSiDesviado(
+  entrega: any,
+  latitud: number,
+  longitud: number
+): boolean {
+  const nodos = entrega.pedido?.ruta_calculada?.nodos;
+  if (!nodos || nodos.length < 2) return false;
+
+  const distancia = rutasService.calcularDistanciaDesdeRuta(latitud, longitud, nodos);
+  return distancia > UMBRAL_DESVIACION_KM;
+}
+
 /**
  * Obtiene el estado actual de una entrega con ultima posicion GPS
  *
@@ -327,11 +365,18 @@ export async function obtenerEstadoEntrega(entrega_id: number) {
     etaActualizado.setMinutes(etaActualizado.getMinutes() + Math.ceil(tiempoRestante));
   }
 
+  // Detectar desviacion de ruta
+  let estaDesviado = false;
+  if (ultimaPosicion && entrega.pedido?.ruta_calculada?.nodos) {
+    estaDesviado = determinarSiDesviado(entrega, ultimaPosicion.latitud, ultimaPosicion.longitud);
+  }
+
   return {
     entrega,
     posicion_actual: ultimaPosicion,
     velocidad_promedio_kmh: velocidadPromedio,
     esta_detenido: estaDetenido,
+    esta_desviado: estaDesviado,
     eta_actualizado: etaActualizado
   };
 }
@@ -396,11 +441,18 @@ export async function obtenerEntregasActivas() {
       // Usar logica hibrida con periodo de gracia
       const estaDetenido = await determinarSiDetenido(entrega.id, velocidadPromedio);
 
+      // Detectar desviacion de ruta
+      let estaDesviado = false;
+      if (ultimaPosicion && entrega.pedido?.ruta_calculada?.nodos) {
+        estaDesviado = determinarSiDesviado(entrega, ultimaPosicion.latitud, ultimaPosicion.longitud);
+      }
+
       return {
         ...entrega,
         posicion_actual: ultimaPosicion,
         velocidad_promedio_kmh: velocidadPromedio,
-        esta_detenido: estaDetenido
+        esta_detenido: estaDetenido,
+        esta_desviado: estaDesviado
       };
     })
   );

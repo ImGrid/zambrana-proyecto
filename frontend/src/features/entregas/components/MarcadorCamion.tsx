@@ -10,6 +10,7 @@ interface MarcadorCamionProps {
   clienteNombre: string;
   velocidadPromedio?: number;
   destacado?: boolean;
+  estaDesviado?: boolean;
 }
 
 // Componente para mostrar marcador de camión en el mapa
@@ -22,12 +23,17 @@ export function MarcadorCamion({
   clienteNombre,
   velocidadPromedio = 0,
   destacado = false,
+  estaDesviado = false,
 }: MarcadorCamionProps) {
   // Determinar si el camión está detenido
   const estaDetenido = velocidadPromedio < VELOCIDAD_DETENIDO_THRESHOLD;
 
-  // Color del marcador según el estado
-  const color = estaDetenido ? MAPA_COLORES.camionDetenido : MAPA_COLORES.camionMovimiento;
+  // Prioridad de color: desviado (rojo) > detenido (naranja) > movimiento (azul)
+  const color = estaDesviado
+    ? MAPA_COLORES.camionDesviado
+    : estaDetenido
+      ? MAPA_COLORES.camionDetenido
+      : MAPA_COLORES.camionMovimiento;
 
   // Tamaño del marcador (más grande si está destacado)
   const size = destacado ? 50 : 40;
@@ -75,19 +81,31 @@ export function MarcadorCamion({
           </svg>
         </div>
         ${
-          estaDetenido
+          estaDesviado
             ? `<div style="
                 position: absolute;
-                top: -8px;
-                right: -8px;
-                width: 16px;
-                height: 16px;
+                top: -10px;
+                right: -10px;
+                width: 20px;
+                height: 20px;
                 background-color: #ef4444;
                 border: 2px solid white;
                 border-radius: 50%;
-                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
               "></div>`
-            : ''
+            : estaDetenido
+              ? `<div style="
+                  position: absolute;
+                  top: -8px;
+                  right: -8px;
+                  width: 16px;
+                  height: 16px;
+                  background-color: #ef4444;
+                  border: 2px solid white;
+                  border-radius: 50%;
+                  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+                "></div>`
+              : ''
         }
       </div>
     `,
@@ -114,8 +132,12 @@ export function MarcadorCamion({
             </div>
             <div>
               <span className="font-semibold">Estado:</span>{' '}
-              <span className={estaDetenido ? 'text-orange-600 font-semibold' : 'text-blue-600 font-semibold'}>
-                {estaDetenido ? 'Detenido' : 'En movimiento'}
+              <span className={
+                estaDesviado ? 'text-red-600 font-semibold'
+                  : estaDetenido ? 'text-orange-600 font-semibold'
+                    : 'text-blue-600 font-semibold'
+              }>
+                {estaDesviado ? 'DESVIADO' : estaDetenido ? 'Detenido' : 'En movimiento'}
               </span>
             </div>
             <div className="text-xs text-gray-500 mt-2">

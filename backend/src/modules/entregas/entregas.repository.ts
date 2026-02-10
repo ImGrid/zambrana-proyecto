@@ -644,7 +644,7 @@ export async function registrarEventoMovimiento(
       created_at
     ) VALUES ($1, $2, $3, $4, $5, NOW())
     RETURNING *`,
-    [entrega_id, tipo_evento, descripcion || null, latitud || null, longitud || null]
+    [entrega_id, tipo_evento, descripcion ?? null, latitud ?? null, longitud ?? null]
   );
 
   const evento = result.rows[0];

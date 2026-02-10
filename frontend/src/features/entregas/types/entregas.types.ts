@@ -104,6 +104,7 @@ export interface EstadoEntrega {
   posicion_actual: PosicionGPS | null;
   velocidad_promedio_kmh: number;
   esta_detenido: boolean;
+  esta_desviado: boolean;
   eta_actualizado: Date | null;
 }
 
@@ -132,6 +133,7 @@ export interface EntregaActiva extends EntregaConDetalle {
   posicion_actual: PosicionGPS | null;
   velocidad_promedio_kmh: number;
   esta_detenido: boolean;
+  esta_desviado: boolean;
 }
 
 // PATCH /entregas/:id/finalizar - Respuesta al finalizar entrega

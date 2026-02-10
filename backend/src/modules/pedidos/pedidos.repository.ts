@@ -126,6 +126,17 @@ export async function createPedido(
       0
     );
 
+    // Determinar zona_id basado en coordenadas de entrega
+    const zonaResult = await client.query<{ id: number }>(
+      `SELECT id FROM zonas_entrega
+       WHERE activo = TRUE
+         AND $1 BETWEEN lat_min AND lat_max
+         AND $2 BETWEEN lng_min AND lng_max
+       LIMIT 1`,
+      [data.latitud_entrega, data.longitud_entrega]
+    );
+    const zonaId = zonaResult.rows[0]?.id ?? null;
+
     // Insertar pedido principal
     const pedidoResult = await client.query<{ id: number }>(
       `INSERT INTO pedidos (
@@ -136,11 +147,12 @@ export async function createPedido(
         latitud_entrega,
         longitud_entrega,
         referencia_ubicacion,
+        zona_id,
         fecha_entrega_solicitada,
         total_m3,
         monto_total,
         observaciones
-      ) VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING id`,
       [
         codigoSeguimiento,
@@ -149,6 +161,7 @@ export async function createPedido(
         data.latitud_entrega,
         data.longitud_entrega,
         data.referencia_ubicacion || null,
+        zonaId,
         data.fecha_entrega_solicitada || null,
         totalM3,
         montoTotal,
@@ -177,16 +190,6 @@ export async function createPedido(
         [pedidoId, item.material_id, item.cantidad_m3, item.precio_unitario, subtotal]
       );
     }
-
-    // Registrar historial de estado inicial
-    await client.query(
-      `INSERT INTO historial_estado_pedido (
-        pedido_id,
-        estado_id,
-        comentario
-      ) VALUES ($1, 1, 'Pedido creado')`,
-      [pedidoId]
-    );
 
     await client.query('COMMIT');
     return pedidoId;
@@ -541,16 +544,6 @@ export async function confirmarPedido(
         : [camionId, conductorId, fechaEntregaEstimada || null, pedidoId]
     );
 
-    // Registrar cambio de estado en historial
-    await client.query(
-      `INSERT INTO historial_estado_pedido (
-        pedido_id,
-        estado_id,
-        comentario
-      ) VALUES ($1, 2, $2)`,
-      [pedidoId, `Pedido confirmado. Asignado camión ${camionId} y conductor ${conductorId}`]
-    );
-
     await client.query('COMMIT');
     return true;
   } catch (error) {
@@ -711,20 +704,6 @@ export async function cancelarPedido(pedidoId: number, motivo: string): Promise<
            updated_at = NOW()
        WHERE id = $2`,
       [motivo, pedidoId]
-    );
-
-    // Registrar en historial con detalle del tipo de cancelacion
-    const comentario = pedido.estado_actual_id === 2
-      ? `Pedido confirmado cancelado (stock devuelto): ${motivo}`
-      : `Pedido pendiente cancelado: ${motivo}`;
-
-    await client.query(
-      `INSERT INTO historial_estado_pedido (
-        pedido_id,
-        estado_id,
-        comentario
-      ) VALUES ($1, 8, $2)`,
-      [pedidoId, comentario]
     );
 
     await client.query('COMMIT');

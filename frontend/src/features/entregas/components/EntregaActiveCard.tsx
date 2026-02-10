@@ -43,10 +43,10 @@ export function EntregaActiveCard({ entrega, selected = false, onClick }: Entreg
           </p>
         </div>
         <Badge
-          variant={entrega.esta_detenido ? 'warning' : 'success'}
+          variant={entrega.esta_desviado ? 'danger' : entrega.esta_detenido ? 'warning' : 'success'}
           className="ml-2 flex-shrink-0"
         >
-          {entrega.esta_detenido ? 'DETENIDO' : 'EN RUTA'}
+          {entrega.esta_desviado ? 'DESVIADO' : entrega.esta_detenido ? 'DETENIDO' : 'EN RUTA'}
         </Badge>
       </div>
 

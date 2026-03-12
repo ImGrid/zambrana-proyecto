@@ -53,10 +53,13 @@ export const refreshResponseSchema = z.object({
   accessToken: z.string()
 });
 
-// Schema de body para refresh (movil envia token en body)
-export const refreshBodySchema = z.object({
-  refreshToken: z.string().optional(),
-});
+// Schema de body para refresh (movil envia token en body, web usa cookie sin body)
+export const refreshBodySchema = z
+  .object({
+    refreshToken: z.string().optional(),
+  })
+  .nullable()
+  .transform((val) => val ?? {});
 
 // Schema de respuesta genérica de mensaje
 export const messageResponseSchema = z.object({

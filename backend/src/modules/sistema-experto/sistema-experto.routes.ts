@@ -18,6 +18,7 @@ const sistemaExpertoRoutes: FastifyPluginAsyncZod = async (fastify) => {
       tags: ['sistema-experto'],
       params: sugerirParamsSchema,
       response: {
+        200: sugerenciaResponseSchema,
         400: errorResponseSchema,
         401: errorResponseSchema,
         403: errorResponseSchema,

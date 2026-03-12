@@ -82,10 +82,6 @@ export const createLoggerConfig = (): FastifyServerOptions['logger'] => {
 
   return {
     ...baseConfig,
-    // Formato JSON compacto para producción
-    formatters: {
-      level: (label: string) => ({ level: label }),
-    },
     transport: {
       targets: [
         // Target 1: Archivo con rotación diaria

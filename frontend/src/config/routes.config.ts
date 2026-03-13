@@ -67,6 +67,14 @@ export const ROUTES: Record<string, RouteConfig> = {
     description: 'Monitoreo GPS en tiempo real de entregas activas'
   },
 
+  // Operaciones - Grafo de operaciones
+  OPERACIONES: {
+    path: '/operaciones',
+    allowedRoles: ['admin', 'gerente'],
+    name: 'Operaciones',
+    description: 'Flujo de operaciones en forma de grafo'
+  },
+
   // Usuarios - Gestión de usuarios del sistema (solo admin)
   USUARIOS: {
     path: '/usuarios',

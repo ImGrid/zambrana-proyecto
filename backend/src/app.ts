@@ -27,6 +27,7 @@ import pedidosRoutes from './modules/pedidos/pedidos.routes.js';
 import entregasRoutes from './modules/entregas/entregas.routes.js';
 import reportesRoutes from './modules/reportes/reportes.routes.js';
 import sistemaExpertoRoutes from './modules/sistema-experto/sistema-experto.routes.js';
+import grafoRoutes from './modules/grafo/grafo.routes.js';
 
 // Generador de Request IDs único y rápido
 const generateRequestId = hyperid();
@@ -140,6 +141,7 @@ export const buildApp = async () => {
   await app.register(entregasRoutes, { prefix: '/api/entregas' });
   await app.register(reportesRoutes, { prefix: '/api/reportes' });
   await app.register(sistemaExpertoRoutes, { prefix: '/api/sistema-experto' });
+  await app.register(grafoRoutes, { prefix: '/api/grafo' });
 
   // Ruta raíz
   app.get('/', async (_request, reply) => {

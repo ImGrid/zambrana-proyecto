@@ -9,6 +9,7 @@ import {
   UserGroupIcon,
   MapIcon,
   MapPinIcon,
+  ShareIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -28,6 +29,7 @@ const navItems: NavItem[] = [
   { name: 'Camiones', href: '/camiones', icon: TruckIcon, roles: ['admin', 'gerente'] },
   { name: 'Conductores', href: '/conductores', icon: UserIcon, roles: ['admin', 'gerente'] },
   { name: 'Monitor GPS', href: '/monitor-gps', icon: MapPinIcon, roles: ['admin', 'gerente'] },
+  { name: 'Operaciones', href: '/operaciones', icon: ShareIcon, roles: ['admin', 'gerente'] },
   { name: 'Usuarios', href: '/usuarios', icon: UserGroupIcon, roles: ['admin'] },
   { name: 'Mis Entregas', href: '/entregas', icon: MapIcon, roles: ['conductor'] },
 ];

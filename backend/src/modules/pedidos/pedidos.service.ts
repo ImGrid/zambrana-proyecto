@@ -1,6 +1,7 @@
 import * as pedidosRepo from './pedidos.repository.js';
 import { pool } from '../../database/postgres/pool.js';
 import { calcularRutaHastaPedido } from '../entregas/rutas.service.js';
+import { crearGrafoPedido, confirmarGrafoPedido } from '../grafo/grafo.service.js';
 
 // =====================================================
 // TIPOS PARA RESPUESTAS
@@ -232,6 +233,13 @@ export async function createPedido(data: {
 
     // Obtener items
     const items = await pedidosRepo.findDetallesPedido(pedidoId);
+
+    // Sincronizar grafo de operaciones en Neo4j
+    try {
+      await crearGrafoPedido(pedidoId);
+    } catch (errorGrafo) {
+      console.error('Error al sincronizar grafo del pedido:', errorGrafo);
+    }
 
     return {
       success: true,
@@ -558,6 +566,13 @@ export async function confirmarPedido(
       // Solo registrar el error
       console.error(`Error al calcular ruta para pedido ${id}:`, errorRuta);
       console.warn('El pedido fue confirmado pero no se pudo calcular la ruta con Neo4j');
+    }
+
+    // Sincronizar grafo de operaciones en Neo4j
+    try {
+      await confirmarGrafoPedido(id);
+    } catch (errorGrafo) {
+      console.error('Error al sincronizar grafo de confirmacion:', errorGrafo);
     }
 
     // Obtener pedido actualizado

@@ -2,6 +2,7 @@ import * as entregasRepo from './entregas.repository.js';
 import * as gpsRepo from './gps.repository.js';
 import * as rutasService from './rutas.service.js';
 import { pool } from '../../database/postgres/pool.js';
+import { crearGrafoEntrega, completarGrafoEntrega } from '../grafo/grafo.service.js';
 
 // Periodo de gracia en minutos despues de un evento REANUDO
 const PERIODO_GRACIA_MINUTOS = 1;
@@ -92,6 +93,13 @@ export async function iniciarEntrega(
     pedido.conductor_asignado_id,
     rutaPlanificadaId
   );
+
+  // Sincronizar grafo de operaciones en Neo4j
+  try {
+    await crearGrafoEntrega(entrega.id);
+  } catch (errorGrafo) {
+    console.error('Error al sincronizar grafo de entrega:', errorGrafo);
+  }
 
   // Retornar entrega con detalles completos
   const entregaDetallada = await entregasRepo.findEntregaById(entrega.id);
@@ -261,6 +269,13 @@ export async function finalizarEntrega(
        WHERE id = $3`,
       [desviacionesDetectadas, porcentajeAdherencia, entrega_id]
     );
+  }
+
+  // Sincronizar grafo de operaciones en Neo4j
+  try {
+    await completarGrafoEntrega(entrega_id);
+  } catch (errorGrafo) {
+    console.error('Error al sincronizar grafo de entrega completada:', errorGrafo);
   }
 
   // Calcular tiempo real de entrega

@@ -21,6 +21,7 @@ import { MonitorGPSPage } from '@/features/entregas/routes/MonitorGPSPage';
 import { MisPedidosPage } from '@/features/cliente/routes/MisPedidosPage';
 import { PerfilPage } from '@/features/cliente/routes/PerfilPage';
 import { TrackingEntregaPage } from '@/features/cliente/routes/TrackingEntregaPage';
+import { GrafoPage } from '@/features/grafo/routes/GrafoPage';
 import { ROUTES } from '@/config/routes.config';
 
 export const router = createBrowserRouter([
@@ -119,6 +120,16 @@ export const router = createBrowserRouter([
               {
                 index: true,
                 element: <MonitorGPSPage />,
+              },
+            ],
+          },
+          {
+            path: ROUTES.OPERACIONES.path,
+            element: <ProtectedRoute allowedRoles={ROUTES.OPERACIONES.allowedRoles} />,
+            children: [
+              {
+                index: true,
+                element: <GrafoPage />,
               },
             ],
           },

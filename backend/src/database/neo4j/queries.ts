@@ -94,7 +94,7 @@ export async function encontrarInterseccionCercana(
  *
  * Uso: Calcular ruta de Planta Agregados Zambrana a Intersección cercana al cliente
  *
- * @param origenId - ID del nodo origen (ej: "PLANTA_QUILLACOLLO")
+ * @param origenId - ID del nodo origen (ej: "PLANTA_AGREGADOS_ZAMBRANA")
  * @param destinoId - ID del nodo destino (ej: "INTER_BLANCO_GALINDO")
  * @returns Ruta calculada con nodos, segmentos y totales
  */

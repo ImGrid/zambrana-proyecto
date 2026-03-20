@@ -108,9 +108,12 @@ class EntregasService {
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         if (data['success'] == true) {
+          final responseData = data['data'] as Map<String, dynamic>?;
+          final warningsList = responseData?['warnings'] as List<dynamic>?;
           return GPSResult(
             success: true,
-            etaActualizado: data['data']?['eta_actualizado'] as String?,
+            etaActualizado: responseData?['eta_actualizado'] as String?,
+            warnings: warningsList?.map((w) => w.toString()).toList() ?? [],
           );
         }
         return GPSResult(
@@ -349,11 +352,13 @@ class GPSResult {
   final bool success;
   final String? etaActualizado;
   final String? mensaje;
+  final List<String> warnings;
 
   GPSResult({
     required this.success,
     this.etaActualizado,
     this.mensaje,
+    this.warnings = const [],
   });
 }
 

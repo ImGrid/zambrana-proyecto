@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_android/geolocator_android.dart';
 
 class GPSService {
   static final GPSService _instance = GPSService._internal();
@@ -91,7 +93,7 @@ class GPSService {
   Future<bool> iniciarTracking({
     required void Function(PosicionActual posicion) onPosicion,
     void Function(String error)? onError,
-    int intervaloSegundos = 30,
+    int intervaloSegundos = 10,
     double distanciaMinimaMetros = 10,
   }) async {
     final permisoResult = await verificarYSolicitarPermisos();
@@ -103,10 +105,29 @@ class GPSService {
     // Cancelar tracking anterior si existe
     await detenerTracking();
 
-    final locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: distanciaMinimaMetros.toInt(),
-    );
+    // Configuracion especifica para Android con foreground service
+    // Esto mantiene el GPS activo cuando la app esta en background
+    late LocationSettings locationSettings;
+
+    if (Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanciaMinimaMetros.toInt(),
+        intervalDuration: Duration(seconds: intervaloSegundos),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText: 'Rastreando ubicacion de entrega',
+          notificationTitle: 'Agregados Zambrana - En ruta',
+          enableWakeLock: true,
+          setOngoing: true,
+          notificationChannelName: 'Tracking GPS',
+        ),
+      );
+    } else {
+      locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanciaMinimaMetros.toInt(),
+      );
+    }
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,

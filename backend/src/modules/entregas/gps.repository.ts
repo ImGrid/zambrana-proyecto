@@ -19,7 +19,7 @@ export interface PosicionGPS {
 /**
  * Inserta una nueva posición GPS en la tabla particionada
  *
- * IMPORTANTE: Esta función se ejecuta cada 30 segundos por cada camión
+ * IMPORTANTE: Esta funcion se ejecuta cada 10 segundos por cada camion
  * Debe ser MUY eficiente
  *
  * @param entrega_id - ID de la entrega

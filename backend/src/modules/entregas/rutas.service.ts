@@ -24,7 +24,7 @@ export interface RutaCompleta {
   };
 }
 
-const PLANTA_QUILLACOLLO_ID = 'PLANTA_QUILLACOLLO';
+const PLANTA_ID = 'PLANTA_AGREGADOS_ZAMBRANA';
 const VELOCIDAD_PROMEDIO_KMH = 40;
 
 /**
@@ -80,7 +80,7 @@ export async function calcularRutaHastaPedido(pedido_id: number): Promise<RutaCo
 
   // PASO 3: Calcular ruta desde planta a interseccion en Neo4j
   const rutaCalculada = await calcularRutaOptima(
-    PLANTA_QUILLACOLLO_ID,
+    PLANTA_ID,
     interseccionDestino.id
   );
 

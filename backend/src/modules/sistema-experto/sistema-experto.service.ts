@@ -207,7 +207,7 @@ export async function generarSugerencia(pedidoId: number) {
 
   if (pedido.fecha_entrega_solicitada) {
     tieneFechaSolicitada = true;
-    fechaSolicitadaStr = pedido.fecha_entrega_solicitada;
+    fechaSolicitadaStr = new Date(pedido.fecha_entrega_solicitada).toISOString();
 
     // Calcular urgencia basada en diferencia de dias
     const fechaSolicitada = new Date(pedido.fecha_entrega_solicitada);

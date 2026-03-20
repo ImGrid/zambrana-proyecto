@@ -16,27 +16,47 @@ class MapaScreen extends ConsumerStatefulWidget {
   ConsumerState<MapaScreen> createState() => _MapaScreenState();
 }
 
-class _MapaScreenState extends ConsumerState<MapaScreen> {
+class _MapaScreenState extends ConsumerState<MapaScreen>
+    with WidgetsBindingObserver {
   final MapController _mapController = MapController();
   final GPSService _gpsService = GPSService();
   bool _entregaCargada = false;
 
   // Coordenadas de la planta Zambrana
-  static const LatLng plantaCoords = LatLng(-17.39228, -66.27838);
+  static const LatLng plantaCoords = LatLng(-17.386140315699063, -66.19983962614776);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Si el pedido esta EN_CAMINO, cargar la entrega existente
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cargarEntregaSiExiste();
     });
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _reconectarTrackingSiNecesario();
+    }
+  }
+
+  // Si hay entrega activa pero el GPS no esta trackeando, reiniciar
+  Future<void> _reconectarTrackingSiNecesario() async {
+    final entregaState = ref.read(entregaProvider);
+    if (entregaState.tieneEntregaActiva && !entregaState.gpsActivo) {
+      await ref.read(entregaProvider.notifier).iniciarTrackingGPS();
+    }
+  }
+
   Future<void> _cargarEntregaSiExiste() async {
     if (widget.pedido.estadoNombre.toUpperCase() == 'EN_CAMINO' && !_entregaCargada) {
       _entregaCargada = true;
-      await ref.read(entregaProvider.notifier).cargarEntregaPorPedido(widget.pedido.id);
+      final loaded = await ref.read(entregaProvider.notifier).cargarEntregaPorPedido(widget.pedido.id);
+      if (loaded) {
+        await ref.read(entregaProvider.notifier).iniciarTrackingGPS();
+      }
     }
   }
 
@@ -79,7 +99,8 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
 
   @override
   void dispose() {
-    // No detenemos el tracking aqui porque puede continuar en background
+    WidgetsBinding.instance.removeObserver(this);
+    // No detenemos el tracking porque continua via foreground service
     super.dispose();
   }
 
@@ -210,7 +231,7 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            _buildInfoRow(Icons.location_on, 'Ubicacion', 'Quillacollo, Cochabamba'),
+            _buildInfoRow(Icons.location_on, 'Ubicacion', 'Agregados, Cochabamba'),
             _buildInfoRow(Icons.access_time, 'Horario', 'Lun-Sab 7:00 - 18:00'),
             _buildInfoRow(Icons.phone, 'Telefono', '+591 4 4360000'),
             const SizedBox(height: 16),
@@ -462,6 +483,22 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
           ),
         );
         ref.read(entregaProvider.notifier).clearMensaje();
+      }
+      if (next.warning != null && next.warning != previous?.warning) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning_amber, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text(next.warning!)),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade800,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        ref.read(entregaProvider.notifier).clearWarning();
       }
     });
 
@@ -831,14 +868,9 @@ class _MapaScreenState extends ConsumerState<MapaScreen> {
       );
     }
 
-    // Si el pedido esta EN_CAMINO pero no tenemos la entrega cargada, intentar cargar
+    // Si el pedido esta EN_CAMINO pero no tenemos la entrega cargada
+    // La carga se hace en initState, aqui solo mostramos loading
     if (estadoPedido == 'EN_CAMINO') {
-      // Intentar cargar la entrega
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!state.isLoading && !state.tieneEntregaActiva) {
-          ref.read(entregaProvider.notifier).cargarEntregaPorPedido(widget.pedido.id);
-        }
-      });
       return const SizedBox(
         width: double.infinity,
         height: 50,

@@ -12,7 +12,7 @@ export type IniciarEntregaInput = z.infer<typeof iniciarEntregaSchema>;
 
 /**
  * Schema para recibir una posición GPS
- * El conductor envía esto cada 30 segundos desde la app móvil
+ * El conductor envia esto cada 10 segundos desde la app movil
  */
 export const recibirGPSSchema = z.object({
   latitud: z

@@ -1,10 +1,10 @@
 [
   {
-    "id": "PLANTA_QUILLACOLLO",
+    "id": "PLANTA_AGREGADOS_ZAMBRANA",
     "osm_id": "PLANTA",
     "nombre": "Planta Agregados Zambrana",
-    "latitud": -17.39228,
-    "longitud": -66.27838,
+    "latitud": -17.386140315699063,
+    "longitud": -66.19983962614776,
     "tipo": "planta"
   },
   {

@@ -56,38 +56,13 @@ async function simularEntregaCompleta() {
     console.log('OK - Token obtenido\n');
 
     // ========================================
-    // PASO 2: BUSCAR NODO MAS LEJANO
+    // PASO 2: DESTINO DE ENTREGA
     // ========================================
-    console.log('Paso 2: Buscando destino lejano en Neo4j...');
-    const resultado = await session.run(`
-      MATCH (planta:Ubicacion {tipo: 'planta'})
-      MATCH (destino:Ubicacion)
-      WHERE destino.tipo = 'interseccion'
-      WITH planta, destino LIMIT 300
-      MATCH path = shortestPath((planta)-[:CONECTA_CON*]-(destino))
-      WITH destino, path,
-           reduce(dist = 0, r in relationships(path) | dist + r.distancia_km) as distancia
-      ORDER BY distancia DESC
-      LIMIT 1
-      RETURN
-        destino.id as id,
-        destino.latitud as lat,
-        destino.longitud as lon,
-        distancia
-    `);
+    const destinoLat = -17.389318552840784;
+    const destinoLon = -66.21232608108289;
 
-    if (resultado.records.length === 0) {
-      throw new Error('No se encontro destino lejano');
-    }
-
-    const destino = resultado.records[0];
-    const destinoLat = destino.get('lat');
-    const destinoLon = destino.get('lon');
-    const distanciaEstimada = destino.get('distancia');
-
-    console.log(`OK - Destino encontrado:`);
-    console.log(`  Coordenadas: (${destinoLat}, ${destinoLon})`);
-    console.log(`  Distancia estimada: ${distanciaEstimada.toFixed(3)} km\n`);
+    console.log('Paso 2: Destino de entrega definido');
+    console.log(`  Coordenadas: (${destinoLat}, ${destinoLon})\n`);
 
     // ========================================
     // PASO 3: CREAR PEDIDO
@@ -108,11 +83,11 @@ async function simularEntregaCompleta() {
       body: JSON.stringify({
         cliente_id: 1,
         fecha_entrega_solicitada: fechaEntregaStr,
-        direccion_entrega: 'Destino de simulacion (nodo mas lejano)',
+        direccion_entrega: 'Simulacion de entrega - Agregados Zambrana',
         latitud_entrega: destinoLat,
         longitud_entrega: destinoLon,
-        referencia_ubicacion: 'Punto mas lejano desde la planta',
-        observaciones: 'Simulacion de entrega al punto mas lejano',
+        referencia_ubicacion: 'Destino de simulacion',
+        observaciones: 'Simulacion de entrega completa',
         items: [
           {
             material_id: 2,
@@ -374,7 +349,7 @@ async function simularEntregaCompleta() {
 
     console.log('\nTRACKING:');
     console.log(`  Posiciones GPS registradas: ${resumen.total_posiciones}`);
-    console.log(`  Distancia recorrida: ${distanciaEstimada.toFixed(3)} km (estimada)`);
+    console.log(`  Distancia: ver metricas abajo`);
 
     if (finalizarData.data.metricas) {
       const m = finalizarData.data.metricas;

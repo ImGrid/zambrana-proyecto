@@ -422,7 +422,7 @@ export async function findHistorialEstados(pedidoId: number): Promise<HistorialE
     `SELECT
       h.*,
       e.nombre as estado_nombre,
-      u.nombre_completo as usuario_nombre
+      u.nombre as usuario_nombre
     FROM historial_estado_pedido h
     INNER JOIN estados_pedido e ON h.estado_id = e.id
     LEFT JOIN usuarios u ON h.usuario_id = u.id

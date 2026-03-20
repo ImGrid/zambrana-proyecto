@@ -5,7 +5,7 @@ import json
 print("=== Extrayendo intersecciones de OpenStreetMap ===\n")
 
 # Coordenadas del área
-planta = (-17.39228, -66.27838)  # Quillacollo
+planta = (-17.386140315699063, -66.19983962614776)  # Agregados Zambrana
 colcapirhua = (-17.390305882051333, -66.23897279221319)  # Colcapirhua
 
 # Usar radio desde la planta (más eficiente que bounding box)
@@ -53,7 +53,7 @@ try:
 
     # Agregar la planta como nodo especial
     intersecciones.insert(0, {
-        'id': 'PLANTA_QUILLACOLLO',
+        'id': 'PLANTA_AGREGADOS_ZAMBRANA',
         'osm_id': 'PLANTA',
         'nombre': 'Planta Agregados Zambrana',
         'latitud': planta[0],

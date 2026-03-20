@@ -608,7 +608,7 @@ export async function obtenerEstadisticasGrafo(): Promise<EstadisticasGrafo> {
       };
     }
 
-    const record = result.records[0];
+    const record = result.records[0]!;
     return {
       total_clientes: toNumber(record.get('total_clientes')),
       total_pedidos: toNumber(record.get('total_pedidos')),

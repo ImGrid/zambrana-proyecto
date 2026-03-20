@@ -3,8 +3,8 @@
 // Coordenadas de Planta Agregados Zambrana
 // Estas coordenadas coinciden con las del backend Neo4j
 export const PLANTA_COORDENADAS = {
-  latitud: -17.39228,
-  longitud: -66.27838,
+  latitud: -17.386140315699063,
+  longitud: -66.19983962614776,
 } as const;
 
 // Configuración del mapa de Leaflet
@@ -27,7 +27,7 @@ export const MAPA_CONFIG = {
 } as const;
 
 // Intervalo de polling para actualizaciones GPS (en milisegundos)
-// El backend recibe GPS cada 30 segundos, nosotros consultamos cada 10 segundos
+// El backend recibe GPS cada 10 segundos, nosotros consultamos cada 10 segundos
 export const POLLING_INTERVAL_MS = 10000;
 
 // Colores para los marcadores y rutas

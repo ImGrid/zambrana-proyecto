@@ -15,6 +15,7 @@ class EntregaState {
   final bool gpsActivo;
   final String? error;
   final String? mensaje;
+  final String? warning;
 
   EntregaState({
     this.isLoading = false,
@@ -26,6 +27,7 @@ class EntregaState {
     this.gpsActivo = false,
     this.error,
     this.mensaje,
+    this.warning,
   });
 
   EntregaState copyWith({
@@ -38,8 +40,10 @@ class EntregaState {
     bool? gpsActivo,
     String? error,
     String? mensaje,
+    String? warning,
     bool clearError = false,
     bool clearMensaje = false,
+    bool clearWarning = false,
     bool clearEntrega = false,
   }) {
     return EntregaState(
@@ -52,6 +56,7 @@ class EntregaState {
       gpsActivo: gpsActivo ?? this.gpsActivo,
       error: clearError ? null : (error ?? this.error),
       mensaje: clearMensaje ? null : (mensaje ?? this.mensaje),
+      warning: clearWarning ? null : (warning ?? this.warning),
     );
   }
 
@@ -147,7 +152,7 @@ class EntregaNotifier extends Notifier<EntregaState> {
   }
 
   // Inicia el tracking GPS y envio periodico al servidor
-  Future<bool> iniciarTrackingGPS({int intervaloSegundos = 30}) async {
+  Future<bool> iniciarTrackingGPS({int intervaloSegundos = 10}) async {
     if (state.entregaActiva == null) {
       state = state.copyWith(error: 'No hay entrega activa');
       return false;
@@ -163,7 +168,7 @@ class EntregaNotifier extends Notifier<EntregaState> {
 
     if (started) {
       state = state.copyWith(gpsActivo: true);
-      // Iniciar timer para enviar posicion cada 30 segundos
+      // Iniciar timer para enviar posicion cada 10 segundos
       _iniciarTimerEnvioPosicion(intervaloSegundos);
     }
 
@@ -204,8 +209,13 @@ class EntregaNotifier extends Notifier<EntregaState> {
       timestamp: posicion.timestamp,
     );
 
-    if (result.success && result.etaActualizado != null) {
-      state = state.copyWith(etaActualizado: result.etaActualizado);
+    if (result.success) {
+      if (result.etaActualizado != null) {
+        state = state.copyWith(etaActualizado: result.etaActualizado);
+      }
+      if (result.warnings.isNotEmpty) {
+        state = state.copyWith(warning: result.warnings.first);
+      }
     }
   }
 
@@ -350,6 +360,10 @@ class EntregaNotifier extends Notifier<EntregaState> {
 
   void clearMensaje() {
     state = state.copyWith(clearMensaje: true);
+  }
+
+  void clearWarning() {
+    state = state.copyWith(clearWarning: true);
   }
 
   // Limpia el estado completamente

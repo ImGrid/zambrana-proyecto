@@ -105,7 +105,7 @@ export const useIniciarEntrega = () => {
 };
 
 // Hook para registrar posición GPS
-// Este hook NO muestra toast porque se ejecuta cada 30 segundos automáticamente
+// Este hook NO muestra toast porque se ejecuta cada 10 segundos automaticamente
 export const useRegistrarGPS = () => {
   const queryClient = useQueryClient();
 

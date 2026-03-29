@@ -80,7 +80,7 @@ export function ConfirmarPedidoModal({ open, onClose, pedido }: ConfirmarPedidoM
 
   const conductoresOptions = conductoresData?.conductores.map((c) => ({
     value: c.id,
-    label: `${c.nombre_completo}${c.licencia_categoria ? ` - Cat. ${c.licencia_categoria}` : ''}`,
+    label: `${c.nombre_completo}${c.usuario_email ? ` - ${c.usuario_email}` : ''}`,
   })) || [];
 
   return (

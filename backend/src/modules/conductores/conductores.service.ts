@@ -24,6 +24,7 @@ interface ListConductoresResult {
     telefono: string | null;
     licencia_categoria: string | null;
     activo: boolean;
+    usuario_email: string | null;
   }>;
   total?: number;
   limit?: number;

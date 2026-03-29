@@ -23,6 +23,7 @@ export interface ConductorListItem {
   telefono: string | null;
   licencia_categoria: string | null;
   activo: boolean;
+  usuario_email: string | null;
 }
 
 // Respuesta de lista de conductores

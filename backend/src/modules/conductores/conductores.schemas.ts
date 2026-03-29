@@ -61,7 +61,8 @@ export const conductoresListResponseSchema = z.object({
     ci: z.string(),
     telefono: z.string().nullable(),
     licencia_categoria: z.string().nullable(),
-    activo: z.boolean()
+    activo: z.boolean(),
+    usuario_email: z.string().nullable()
   })),
   total: z.number(),
   limit: z.number(),

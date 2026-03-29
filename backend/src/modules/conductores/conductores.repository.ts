@@ -22,6 +22,7 @@ export interface ConductorListItem {
   telefono: string | null;
   licencia_categoria: string | null;
   activo: boolean;
+  usuario_email: string | null;
 }
 
 // Whitelist de campos ordenables
@@ -43,15 +44,17 @@ export async function findAllConductores(
   const sortColumn = (sort_by && SORT_FIELDS[sort_by]) || 'c.nombre_completo';
   const sortDirection = sort_order === 'desc' ? 'DESC' : 'ASC';
 
-  const result = await pool.query<ConductorRow>(
+  const result = await pool.query<ConductorListItem>(
     `SELECT
       c.id,
       c.nombre_completo,
       c.ci,
       c.telefono,
       c.licencia_categoria,
-      c.activo
+      c.activo,
+      u.email as usuario_email
     FROM conductores c
+    LEFT JOIN usuarios u ON c.usuario_id = u.id
     ${whereClause}
     ORDER BY ${sortColumn} ${sortDirection}
     LIMIT $1 OFFSET $2`,

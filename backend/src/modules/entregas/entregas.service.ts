@@ -145,6 +145,26 @@ export async function recibirPosicionGPS(
     throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
   }
 
+  // Deduplicacion: no insertar si es la misma posicion (< 5m) y paso poco tiempo (< 120s)
+  const ultimaPosicion = await gpsRepo.obtenerUltimaPosicion(entrega_id);
+  if (ultimaPosicion) {
+    const distanciaKm = rutasService.calcularDistanciaHaversine(
+      ultimaPosicion.latitud, ultimaPosicion.longitud, latitud, longitud
+    );
+    const tiempoMs = Date.now() - new Date(ultimaPosicion.timestamp).getTime();
+    const tiempoSeg = tiempoMs / 1000;
+
+    // Menos de 5 metros Y menos de 120 segundos = duplicado, no insertar
+    if (distanciaKm < 0.005 && tiempoSeg < 120) {
+      return {
+        success: true,
+        warnings: [],
+        eta_actualizado: null,
+        posicion_registrada: { latitud, longitud, timestamp: timestamp || new Date() }
+      };
+    }
+  }
+
   // Insertar posicion GPS
   await gpsRepo.insertarPosicionGPS(
     entrega_id,
@@ -193,11 +213,76 @@ export async function recibirPosicionGPS(
   };
 }
 
+// Valida que el conductor este cerca del destino antes de finalizar
+// Lee la regla R7_GEOFENCE_ENTREGA de configuracion_reglas
+// Si permitir_override_con_observacion esta activo, permite finalizar lejos con observacion
+async function validarProximidadEntrega(
+  entrega_id: number,
+  entrega: any,
+  observaciones?: string
+): Promise<void> {
+  // Leer regla de geofence de la BD
+  const reglaResult = await pool.query(
+    `SELECT parametros, activa FROM configuracion_reglas WHERE codigo = 'R7_GEOFENCE_ENTREGA'`
+  );
+
+  const regla = reglaResult.rows[0];
+  if (!regla || !regla.activa) return;
+
+  const params = regla.parametros;
+  const radioMetros = params.radio_metros || 300;
+  const velocidadMaxKmh = params.velocidad_maxima_kmh || 10;
+  const permitirOverride = params.permitir_override_con_observacion || false;
+
+  // Obtener coordenadas del destino
+  const latDestino = entrega.pedido?.latitud_entrega;
+  const lonDestino = entrega.pedido?.longitud_entrega;
+  if (!latDestino || !lonDestino) return;
+
+  // Obtener ultima posicion GPS del conductor
+  const ultimaPosicion = await gpsRepo.obtenerUltimaPosicion(entrega_id);
+  if (!ultimaPosicion) {
+    throw new Error('No se puede finalizar: no hay posiciones GPS registradas para esta entrega');
+  }
+
+  // Calcular distancia al destino
+  const distanciaKm = rutasService.calcularDistanciaHaversine(
+    ultimaPosicion.latitud, ultimaPosicion.longitud,
+    latDestino, lonDestino
+  );
+  const distanciaMetros = distanciaKm * 1000;
+
+  // Verificar velocidad (no deberia finalizar a alta velocidad)
+  const velocidadActual = ultimaPosicion.velocidad_kmh || 0;
+
+  if (distanciaMetros > radioMetros) {
+    // Esta lejos del destino
+    if (permitirOverride && observaciones && observaciones.trim().length > 0) {
+      // Permitido con observacion justificando
+      return;
+    }
+    throw new Error(
+      `No se puede finalizar: el conductor esta a ${Math.round(distanciaMetros)}m del destino (maximo permitido: ${radioMetros}m). ` +
+      (permitirOverride
+        ? 'Para finalizar desde esta distancia, incluye una observacion explicando el motivo.'
+        : '')
+    );
+  }
+
+  if (velocidadActual > velocidadMaxKmh) {
+    throw new Error(
+      `No se puede finalizar: el vehiculo esta en movimiento a ${velocidadActual.toFixed(1)} km/h. ` +
+      `Detente antes de finalizar la entrega (maximo: ${velocidadMaxKmh} km/h).`
+    );
+  }
+}
+
 /**
  * Finaliza una entrega registrando firma y foto
  *
  * FLUJO:
  * 1. Validar que la entrega existe y esta activa
+ * 1b. Validar proximidad al destino (geofence R7)
  * 2. Calcular metricas finales (distancia recorrida, tiempo real, etc)
  * 3. Finalizar entrega en BD (actualiza entrega, pedido, camion, conductor)
  * 4. Registrar evento de finalizacion
@@ -224,6 +309,9 @@ export async function finalizarEntrega(
   if (entrega.entregado === true || !entrega.hora_salida_planta) {
     throw new Error(`La entrega no esta activa (entregado: ${entrega.entregado})`);
   }
+
+  // Validacion de geofence: conductor debe estar cerca del destino
+  await validarProximidadEntrega(entrega_id, entrega, observaciones);
 
   // Calcular metricas finales
   const distanciaRecorrida = await gpsRepo.calcularDistanciaRecorrida(entrega_id);
@@ -296,9 +384,15 @@ export async function finalizarEntrega(
   };
 }
 
+// Minimo de posiciones GPS en la ventana de 2 min para declarar DETENIDO
+// Evita falsos positivos con pocas lecturas (ej: acaba de iniciar la entrega)
+const MIN_POSICIONES_PARA_DETENIDO = 6;
+
 // Determina si el vehiculo esta detenido usando logica hibrida
 // 1. Si hay evento REANUDO reciente (dentro del periodo de gracia), confiar en el conductor
-// 2. Si paso el periodo de gracia o no hay evento, usar calculo por velocidad
+// 2. Si hay evento DETENIDO (sin REANUDO posterior), esta detenido
+// 3. Buffer temporal: requiere minimo de lecturas bajas antes de declarar detenido
+// 4. Fuera del periodo de gracia, usar velocidad promedio de 2 minutos
 async function determinarSiDetenido(
   entrega_id: number,
   velocidadPromedio: number
@@ -323,7 +417,14 @@ async function determinarSiDetenido(
     return true;
   }
 
-  // Fuera del periodo de gracia o sin eventos - usar calculo por velocidad
+  // Buffer temporal: si no hay suficientes posiciones en los ultimos 2 minutos,
+  // no podemos determinar con confianza que esta detenido
+  const posicionesRecientes = await gpsRepo.contarPosicionesRecientes(entrega_id, 2);
+  if (posicionesRecientes < MIN_POSICIONES_PARA_DETENIDO) {
+    return false;
+  }
+
+  // Fuera del periodo de gracia y con suficientes datos - usar velocidad promedio
   return rutasService.estaDetenido(velocidadPromedio);
 }
 
@@ -360,7 +461,7 @@ export async function obtenerEstadoEntrega(entrega_id: number) {
   const ultimaPosicion = await gpsRepo.obtenerUltimaPosicion(entrega_id);
 
   // Calcular velocidad promedio de los ultimos 10 minutos
-  const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega_id, 10);
+  const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega_id, 2);
 
   // Detectar si esta detenido (logica hibrida con periodo de gracia)
   const estaDetenido = await determinarSiDetenido(entrega_id, velocidadPromedio);
@@ -451,7 +552,7 @@ export async function obtenerEntregasActivas() {
   const entregasConPosicion = await Promise.all(
     entregas.map(async (entrega) => {
       const ultimaPosicion = await gpsRepo.obtenerUltimaPosicion(entrega.id);
-      const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega.id, 10);
+      const velocidadPromedio = await gpsRepo.calcularVelocidadPromedio(entrega.id, 2);
 
       // Usar logica hibrida con periodo de gracia
       const estaDetenido = await determinarSiDetenido(entrega.id, velocidadPromedio);

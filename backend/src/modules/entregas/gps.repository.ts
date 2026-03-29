@@ -195,12 +195,12 @@ export async function calcularDistanciaRecorrida(entrega_id: number): Promise<nu
  * Uso: Detectar si el camión está atascado (velocidad muy baja)
  *
  * @param entrega_id - ID de la entrega
- * @param minutos - Ventana de tiempo en minutos (default: 10)
+ * @param minutos - Ventana de tiempo en minutos (default: 2)
  * @returns Velocidad promedio en km/h
  */
 export async function calcularVelocidadPromedio(
   entrega_id: number,
-  minutos: number = 10
+  minutos: number = 2
 ): Promise<number> {
   const result = await pool.query<{ velocidad_promedio: number }>(
     `SELECT
@@ -250,4 +250,21 @@ export async function obtenerPosicionesPorRango(
   );
 
   return result.rows;
+}
+
+// Cuenta posiciones GPS en los ultimos N minutos para una entrega
+// Uso: Buffer temporal para deteccion de DETENIDO (requiere minimo de lecturas)
+export async function contarPosicionesRecientes(
+  entrega_id: number,
+  minutos: number = 2
+): Promise<number> {
+  const result = await pool.query<{ count: string }>(
+    `SELECT COUNT(*) as count
+    FROM posiciones_gps
+    WHERE entrega_id = $1
+      AND timestamp >= NOW() - $2 * INTERVAL '1 minute'`,
+    [entrega_id, minutos]
+  );
+
+  return parseInt(result.rows[0]?.count || '0', 10);
 }

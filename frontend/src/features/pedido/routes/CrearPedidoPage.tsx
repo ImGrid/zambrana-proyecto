@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ShoppingCart, MapPin, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Stepper } from '@/components/ui/Stepper';
+import { PLANTA_COORDENADAS } from '@/features/entregas/constants/mapa.constants';
 import { useCartStore } from '../stores/cart.store';
 import { StepCart } from '../components/StepCart';
 import { StepDireccion } from '../components/StepDireccion';
@@ -21,8 +22,8 @@ export function CrearPedidoPage() {
 
   const [direccionData, setDireccionData] = useState({
     direccion_entrega: '',
-    latitud_entrega: -17.3935,
-    longitud_entrega: -66.1570,
+    latitud_entrega: PLANTA_COORDENADAS.latitud,
+    longitud_entrega: PLANTA_COORDENADAS.longitud,
     referencia_ubicacion: '',
     fecha_entrega_solicitada: '',
     observaciones: '',
@@ -73,11 +74,9 @@ export function CrearPedidoPage() {
       <div className="mb-8">
         <Stepper
           steps={steps.map((step) => ({
-            id: step.id.toString(),
             label: step.label,
-            icon: step.icon,
           }))}
-          currentStep={(currentStep - 1).toString()}
+          currentStep={currentStep}
           orientation="horizontal"
         />
       </div>

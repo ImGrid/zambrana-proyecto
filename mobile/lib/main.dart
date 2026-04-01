@@ -4,6 +4,9 @@ import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/pedidos_screen.dart';
 
+// Clave global de navegacion para limpiar la pila en sesion expirada
+final navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   runApp(
     const ProviderScope(
@@ -18,6 +21,7 @@ class ZambranaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Zambrana Conductor',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

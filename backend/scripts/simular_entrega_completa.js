@@ -27,6 +27,53 @@ function esperar(segundos) {
   return new Promise(resolve => setTimeout(resolve, segundos * 1000));
 }
 
+// Calcular distancia en metros entre dos coordenadas usando Haversine
+function distanciaMetros(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Genera puntos interpolados entre nodos cada ~PASO_METROS metros
+// Agrega ruido GPS realista de +-1.5 metros
+function interpolarRuta(nodos, pasoMetros) {
+  const puntos = [];
+
+  for (let i = 0; i < nodos.length - 1; i++) {
+    const a = nodos[i];
+    const b = nodos[i + 1];
+    const dist = distanciaMetros(a.latitud, a.longitud, b.latitud, b.longitud);
+    const numPasos = Math.max(1, Math.round(dist / pasoMetros));
+
+    for (let j = 0; j < numPasos; j++) {
+      const t = j / numPasos;
+      const lat = a.latitud + (b.latitud - a.latitud) * t;
+      const lon = a.longitud + (b.longitud - a.longitud) * t;
+
+      // Ruido GPS realista: +-1.5 metros (~0.0000135 grados)
+      const ruidoLat = (Math.random() - 0.5) * 0.000027;
+      const ruidoLon = (Math.random() - 0.5) * 0.000027;
+
+      puntos.push({
+        latitud: lat + ruidoLat,
+        longitud: lon + ruidoLon
+      });
+    }
+  }
+
+  // Agregar el ultimo nodo (destino)
+  const ultimo = nodos[nodos.length - 1];
+  puntos.push({ latitud: ultimo.latitud, longitud: ultimo.longitud });
+
+  return puntos;
+}
+
 async function simularEntregaCompleta() {
   const session = driver.session();
 
@@ -58,8 +105,8 @@ async function simularEntregaCompleta() {
     // ========================================
     // PASO 2: DESTINO DE ENTREGA
     // ========================================
-    const destinoLat = -17.389318552840784;
-    const destinoLon = -66.21232608108289;
+    const destinoLat = -17.387163072805688;
+    const destinoLon = -66.15335998079675;
 
     console.log('Paso 2: Destino de entrega definido');
     console.log(`  Coordenadas: (${destinoLat}, ${destinoLon})\n`);
@@ -81,7 +128,7 @@ async function simularEntregaCompleta() {
         'Authorization': `Bearer ${ACCESS_TOKEN}`
       },
       body: JSON.stringify({
-        cliente_id: 1,
+        cliente_id: 13,
         fecha_entrega_solicitada: fechaEntregaStr,
         direccion_entrega: 'Simulacion de entrega - Agregados Zambrana',
         latitud_entrega: destinoLat,
@@ -226,18 +273,38 @@ async function simularEntregaCompleta() {
     console.log(`  Tiempo estimado: ${rutaCalculada.tiempo_total_minutos.toFixed(1)} min\n`);
 
     // ========================================
-    // PASO 8: SIMULAR RECORRIDO GPS
+    // PASO 8: SIMULAR RECORRIDO GPS CON INTERPOLACION
     // ========================================
-    console.log('Paso 8: Simulando recorrido GPS...');
-    console.log(`Enviando ${nodos.length} posiciones cada 3 segundos...\n`);
+    const PASO_METROS = 7;
+    const INTERVALO_SEGUNDOS = 1.3;
+    const VELOCIDAD_BASE_KMH = 20; // ~20 km/h = velocidad de camion en zona urbana
+
+    const puntosGPS = interpolarRuta(nodos, PASO_METROS);
+    const duracionEstimada = (puntosGPS.length * INTERVALO_SEGUNDOS / 60).toFixed(1);
+
+    console.log(`Paso 8: Simulando recorrido GPS con interpolacion...`);
+    console.log(`  Nodos originales: ${nodos.length}`);
+    console.log(`  Puntos interpolados: ${puntosGPS.length} (cada ~${PASO_METROS}m)`);
+    console.log(`  Intervalo: ${INTERVALO_SEGUNDOS}s entre puntos`);
+    console.log(`  Duracion estimada: ~${duracionEstimada} minutos\n`);
 
     let posicionesEnviadas = 0;
 
-    for (let i = 0; i < nodos.length; i++) {
-      const nodo = nodos[i];
-      const porcentaje = ((i + 1) / nodos.length * 100).toFixed(1);
+    for (let i = 0; i < puntosGPS.length; i++) {
+      const punto = puntosGPS[i];
+      const porcentaje = ((i + 1) / puntosGPS.length * 100).toFixed(1);
 
-      // Enviar posicion GPS
+      // Velocidad con desaceleracion gradual al acercarse al destino
+      const progreso = i / puntosGPS.length;
+      let velocidad;
+      if (progreso < 0.7) {
+        velocidad = VELOCIDAD_BASE_KMH + (Math.random() - 0.3) * 4;
+      } else {
+        // Ultimas 30%: desacelerar de 20 a 2 km/h
+        const factorDesacel = (progreso - 0.7) / 0.3;
+        velocidad = VELOCIDAD_BASE_KMH * (1 - factorDesacel * 0.9) + Math.random() * 2;
+      }
+
       const gpsRes = await fetch(`${API_URL}/entregas/${entregaId}/gps`, {
         method: 'POST',
         headers: {
@@ -245,10 +312,10 @@ async function simularEntregaCompleta() {
           'Authorization': `Bearer ${ACCESS_TOKEN}`
         },
         body: JSON.stringify({
-          latitud: nodo.latitud,
-          longitud: nodo.longitud,
-          velocidad_kmh: 35 + Math.random() * 30, // 35-65 km/h
-          precision_metros: 5 + Math.random() * 10 // 5-15 metros
+          latitud: punto.latitud,
+          longitud: punto.longitud,
+          velocidad_kmh: Math.max(0, velocidad),
+          precision_metros: 3 + Math.random() * 7
         })
       });
 
@@ -256,31 +323,50 @@ async function simularEntregaCompleta() {
         const gpsData = await gpsRes.json();
         posicionesEnviadas++;
 
-        // Mostrar progreso cada 10 nodos o en el ultimo
-        if (i % 10 === 0 || i === nodos.length - 1) {
+        if (i % 20 === 0 || i === puntosGPS.length - 1) {
           const etaMinutos = gpsData.data.eta_actualizado
             ? Math.round((new Date(gpsData.data.eta_actualizado) - new Date()) / 60000)
             : 'N/A';
 
-          console.log(`  [${porcentaje}%] Posicion ${i + 1}/${nodos.length} - ETA: ${etaMinutos} min`);
+          console.log(`  [${porcentaje}%] Posicion ${posicionesEnviadas}/${puntosGPS.length} - ETA: ${etaMinutos} min`);
         }
       } else {
         const error = await gpsRes.text();
         console.log(`  ERROR en posicion ${i + 1}: ${error}`);
       }
 
-      // Esperar 3 segundos antes de enviar siguiente posicion
-      if (i < nodos.length - 1) {
-        await esperar(3);
+      if (i < puntosGPS.length - 1) {
+        await esperar(INTERVALO_SEGUNDOS);
       }
     }
 
     console.log(`\nOK - ${posicionesEnviadas} posiciones GPS enviadas\n`);
 
     // ========================================
-    // PASO 9: FINALIZAR ENTREGA
+    // PASO 9: DETENERSE Y FINALIZAR ENTREGA
     // ========================================
-    console.log('Paso 9: Finalizando entrega...');
+    console.log('Paso 9: Deteniendose en destino y finalizando...');
+
+    // Enviar posiciones detenido en destino
+    const ultimoPunto = puntosGPS[puntosGPS.length - 1];
+    for (let d = 0; d < 10; d++) {
+      await fetch(`${API_URL}/entregas/${entregaId}/gps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ACCESS_TOKEN}`
+        },
+        body: JSON.stringify({
+          latitud: ultimoPunto.latitud + (Math.random() - 0.5) * 0.00005,
+          longitud: ultimoPunto.longitud + (Math.random() - 0.5) * 0.00005,
+          velocidad_kmh: 0,
+          precision_metros: 3
+        })
+      });
+      await esperar(1);
+    }
+    console.log('  Camion detenido en destino (10 posiciones a 0 km/h)');
+
     const finalizarRes = await fetch(`${API_URL}/entregas/${entregaId}/finalizar`, {
       method: 'PATCH',
       headers: {

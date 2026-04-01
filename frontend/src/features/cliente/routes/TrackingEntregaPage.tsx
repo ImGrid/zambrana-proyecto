@@ -226,10 +226,12 @@ export const TrackingEntregaPage = () => {
                 <Clock className="h-8 w-8 text-coral-600 mx-auto mb-2" />
                 <p className="text-sm text-coral-700 mb-1">Tiempo estimado de llegada</p>
                 <p className="text-3xl font-bold text-coral-900">
-                  {formatETA(null)}
+                  {formatETA(entregaActual.eta_actualizado)}
                 </p>
                 <p className="text-xs text-coral-600 mt-2">
-                  Actualización automática cada 10 segundos
+                  {entregaActual.eta_actualizado
+                    ? 'Actualizado en tiempo real'
+                    : 'Esperando datos GPS...'}
                 </p>
               </div>
             </CardContent>

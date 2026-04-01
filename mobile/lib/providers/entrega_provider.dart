@@ -69,6 +69,7 @@ class EntregaNotifier extends Notifier<EntregaState> {
   final EntregasService _entregasService = EntregasService();
   final GPSService _gpsService = GPSService();
   Timer? _gpsTimer;
+  Timer? _pollingTimer;
 
   @override
   EntregaState build() {
@@ -119,6 +120,9 @@ class EntregaNotifier extends Notifier<EntregaState> {
         velocidadPromedioKmh: entregaActiva.velocidadPromedioKmh,
         estaDetenido: entregaActiva.estaDetenido,
       );
+
+      // Iniciar polling para actualizar posicion periodicamente
+      _iniciarPolling();
       return true;
     } else {
       state = state.copyWith(
@@ -158,6 +162,16 @@ class EntregaNotifier extends Notifier<EntregaState> {
       return false;
     }
 
+    // Obtener posicion inicial antes de arrancar el stream.
+    // Esto garantiza que posicionActual no sea null desde el segundo 0
+    // y el servidor reciba la primera coordenada inmediatamente.
+    final posInicial = await _gpsService.obtenerPosicionActual();
+    if (posInicial.success && posInicial.posicion != null) {
+      _onNuevaPosicion(posInicial.posicion!);
+      // Enviar posicion inicial al servidor sin esperar al timer
+      _enviarPosicionAlServidor();
+    }
+
     final started = await _gpsService.iniciarTracking(
       onPosicion: _onNuevaPosicion,
       onError: (error) {
@@ -167,21 +181,33 @@ class EntregaNotifier extends Notifier<EntregaState> {
     );
 
     if (started) {
+      // GPS local toma el control, detener polling del servidor
+      _detenerPolling();
       state = state.copyWith(gpsActivo: true);
-      // Iniciar timer para enviar posicion cada 10 segundos
+      // Iniciar timer para enviar posicion cada N segundos
       _iniciarTimerEnvioPosicion(intervaloSegundos);
+    } else {
+      // El stream no arranco pero tenemos posicion inicial,
+      // usar polling como fallback para seguir enviando
+      if (state.posicionActual != null) {
+        state = state.copyWith(
+          gpsActivo: true,
+          warning: 'GPS en modo fallback: usando posicion puntual',
+        );
+        _iniciarTimerEnvioPosicion(intervaloSegundos);
+      }
     }
 
-    return started;
+    return started || state.posicionActual != null;
   }
 
   // Callback cuando hay nueva posicion GPS
+  // No determina estaDetenido localmente - el servidor lo calcula
+  // con logica hibrida (eventos + velocidad promedio + buffer temporal)
   void _onNuevaPosicion(PosicionActual posicion) {
     state = state.copyWith(
       posicionActual: posicion,
       velocidadPromedioKmh: posicion.velocidadKmh,
-      // Detectar si esta detenido (velocidad < 5 km/h)
-      estaDetenido: (posicion.velocidadKmh ?? 0) < 5,
     );
   }
 
@@ -194,11 +220,77 @@ class EntregaNotifier extends Notifier<EntregaState> {
     );
   }
 
+  // Inicia polling periodico al servidor para obtener posicion actualizada
+  void _iniciarPolling({int intervaloSegundos = 10}) {
+    _detenerPolling();
+    _pollingTimer = Timer.periodic(
+      Duration(seconds: intervaloSegundos),
+      (_) => actualizarEstadoEntrega(),
+    );
+  }
+
+  // Detiene el polling periodico
+  void _detenerPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  int _enviosFallidos = 0;
+  String? _ultimoTimestampEnviado;
+  double? _ultimaLatEnviada;
+  double? _ultimaLonEnviada;
+  DateTime? _ultimoEnvioExitoso;
+
   // Envia la posicion actual al servidor
+  // Filtra duplicados: no reenvia si es la misma lectura GPS o
+  // si la distancia es menor a 5m (excepto heartbeat cada 120s)
   Future<void> _enviarPosicionAlServidor() async {
-    if (state.entregaActiva == null || state.posicionActual == null) return;
+    if (state.entregaActiva == null) return;
+
+    // Si no hay posicion del stream, intentar obtener una puntual
+    if (state.posicionActual == null) {
+      final posPuntual = await _gpsService.obtenerPosicionActual();
+      if (posPuntual.success && posPuntual.posicion != null) {
+        _onNuevaPosicion(posPuntual.posicion!);
+      } else {
+        _enviosFallidos++;
+        if (_enviosFallidos >= 3) {
+          state = state.copyWith(
+            warning: 'Sin senal GPS. Verifica que la ubicacion este activada.',
+          );
+        }
+        return;
+      }
+    }
 
     final posicion = state.posicionActual!;
+
+    // Filtro de duplicados: no reenviar la misma lectura GPS
+    if (_ultimoTimestampEnviado != null &&
+        posicion.timestamp == _ultimoTimestampEnviado) {
+      // Mismo timestamp exacto = misma lectura, no reenviar
+      // Excepto heartbeat cada 120 segundos para confirmar que seguimos vivos
+      if (_ultimoEnvioExitoso != null) {
+        final segundosDesdeUltimo = DateTime.now().difference(_ultimoEnvioExitoso!).inSeconds;
+        if (segundosDesdeUltimo < 120) return;
+      }
+    }
+
+    // Filtro de distancia minima: no enviar si se movio menos de 5 metros
+    if (_ultimaLatEnviada != null && _ultimaLonEnviada != null) {
+      final distancia = _gpsService.calcularDistancia(
+        _ultimaLatEnviada!, _ultimaLonEnviada!,
+        posicion.latitud, posicion.longitud,
+      );
+      if (distancia < 5) {
+        // Menos de 5 metros, no enviar (excepto heartbeat cada 120s)
+        if (_ultimoEnvioExitoso != null) {
+          final segundosDesdeUltimo = DateTime.now().difference(_ultimoEnvioExitoso!).inSeconds;
+          if (segundosDesdeUltimo < 120) return;
+        }
+      }
+    }
+
     final result = await _entregasService.registrarPosicionGPS(
       state.entregaActiva!.id,
       posicion.latitud,
@@ -210,11 +302,23 @@ class EntregaNotifier extends Notifier<EntregaState> {
     );
 
     if (result.success) {
+      _enviosFallidos = 0;
+      _ultimoTimestampEnviado = posicion.timestamp;
+      _ultimaLatEnviada = posicion.latitud;
+      _ultimaLonEnviada = posicion.longitud;
+      _ultimoEnvioExitoso = DateTime.now();
       if (result.etaActualizado != null) {
         state = state.copyWith(etaActualizado: result.etaActualizado);
       }
       if (result.warnings.isNotEmpty) {
         state = state.copyWith(warning: result.warnings.first);
+      }
+    } else {
+      _enviosFallidos++;
+      if (_enviosFallidos >= 3) {
+        state = state.copyWith(
+          warning: 'Error enviando GPS al servidor. Reintentando...',
+        );
       }
     }
   }
@@ -310,7 +414,8 @@ class EntregaNotifier extends Notifier<EntregaState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
 
-    // Detener tracking GPS antes de finalizar
+    // Detener polling y tracking GPS antes de finalizar
+    _detenerPolling();
     await detenerTrackingGPS();
 
     final result = await _entregasService.finalizarEntrega(
@@ -344,8 +449,23 @@ class EntregaNotifier extends Notifier<EntregaState> {
 
     if (result.success && result.estado != null) {
       final estadoData = result.estado!;
+
+      // Convertir PosicionGPS del backend a PosicionActual
+      PosicionActual? posicion;
+      if (estadoData.posicionActual != null) {
+        posicion = PosicionActual(
+          latitud: estadoData.posicionActual!.latitud,
+          longitud: estadoData.posicionActual!.longitud,
+          velocidadKmh: estadoData.posicionActual!.velocidadKmh,
+          direccionGrados: estadoData.posicionActual!.direccionGrados,
+          precisionMetros: estadoData.posicionActual!.precisionMetros,
+          timestamp: estadoData.posicionActual!.timestamp,
+        );
+      }
+
       state = state.copyWith(
         entregaActiva: estadoData.entrega,
+        posicionActual: posicion,
         velocidadPromedioKmh: estadoData.velocidadPromedioKmh,
         estaDetenido: estadoData.estaDetenido,
         etaActualizado: estadoData.etaActualizado,
@@ -368,7 +488,13 @@ class EntregaNotifier extends Notifier<EntregaState> {
 
   // Limpia el estado completamente
   void reset() {
+    _detenerPolling();
     detenerTrackingGPS();
+    _enviosFallidos = 0;
+    _ultimoTimestampEnviado = null;
+    _ultimaLatEnviada = null;
+    _ultimaLonEnviada = null;
+    _ultimoEnvioExitoso = null;
     state = EntregaState();
   }
 }

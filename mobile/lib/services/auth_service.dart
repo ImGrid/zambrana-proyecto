@@ -21,12 +21,13 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = response.data;
         final accessToken = data['accessToken'] as String;
+        final refreshToken = data['refreshToken'] as String?;
         final userData = data['user'] as Map<String, dynamic>;
         final user = User.fromJson(userData);
 
-        // Guardar token y usuario
-        _apiService.setToken(accessToken);
-        await _saveCredentials(accessToken, user);
+        // Guardar ambos tokens
+        _apiService.setTokens(accessToken, refreshToken);
+        await _saveCredentials(accessToken, refreshToken, user);
 
         return AuthResult(success: true, user: user);
       }
@@ -51,6 +52,7 @@ class AuthService {
     _apiService.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
     await prefs.remove('user_data');
   }
 
@@ -58,10 +60,11 @@ class AuthService {
   Future<User?> getStoredUser() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
+    final refreshToken = prefs.getString('refresh_token');
     final userJson = prefs.getString('user_data');
 
     if (token != null && userJson != null) {
-      _apiService.setToken(token);
+      _apiService.setTokens(token, refreshToken);
       try {
         final userData = jsonDecode(userJson) as Map<String, dynamic>;
         return User.fromJson(userData);
@@ -73,9 +76,12 @@ class AuthService {
   }
 
   // Guardar credenciales
-  Future<void> _saveCredentials(String token, User user) async {
+  Future<void> _saveCredentials(String token, String? refreshToken, User user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', token);
+    if (refreshToken != null) {
+      await prefs.setString('refresh_token', refreshToken);
+    }
     await prefs.setString('user_data', jsonEncode(user.toJson()));
   }
 }

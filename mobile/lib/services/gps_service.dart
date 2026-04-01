@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator_android/geolocator_android.dart';
 
 class GPSService {
   static final GPSService _instance = GPSService._internal();
@@ -10,6 +9,11 @@ class GPSService {
 
   StreamSubscription<Position>? _positionSubscription;
   Position? _lastPosition;
+  Timer? _watchdogTimer;
+  // Parametros guardados para recrear el stream si el watchdog lo detecta muerto
+  void Function(PosicionActual posicion)? _onPosicionCallback;
+  void Function(String error)? _onErrorCallback;
+  int _intervaloSegundos = 10;
 
   Position? get lastPosition => _lastPosition;
 
@@ -94,7 +98,6 @@ class GPSService {
     required void Function(PosicionActual posicion) onPosicion,
     void Function(String error)? onError,
     int intervaloSegundos = 10,
-    double distanciaMinimaMetros = 10,
   }) async {
     final permisoResult = await verificarYSolicitarPermisos();
     if (!permisoResult.concedido) {
@@ -102,18 +105,35 @@ class GPSService {
       return false;
     }
 
+    // Guardar callbacks para poder recrear el stream desde el watchdog
+    _onPosicionCallback = onPosicion;
+    _onErrorCallback = onError;
+    _intervaloSegundos = intervaloSegundos;
+
     // Cancelar tracking anterior si existe
     await detenerTracking();
 
-    // Configuracion especifica para Android con foreground service
-    // Esto mantiene el GPS activo cuando la app esta en background
+    await _crearStream();
+    return _positionSubscription != null;
+  }
+
+  // Crea el stream GPS interno (usado por iniciarTracking y por el watchdog)
+  Future<void> _crearStream() async {
     late LocationSettings locationSettings;
 
     if (Platform.isAndroid) {
+      // distanceFilter: 0 para que emita por intervalo de tiempo sin importar
+      // si el dispositivo se movio. Con distanceFilter > 0 Android usa condicion
+      // AND (intervalo Y distancia) y suprime posiciones si no hay desplazamiento.
+      // Se usa FusedLocationProvider (default) en vez de LocationManager porque:
+      // - Mejor precision (fusion de GPS + WiFi + sensores)
+      // - Respeta intervalDuration correctamente
+      // - forceLocationManager causaba congelamiento del stream (issues #1290, #1114)
+      // - El workaround para issue #1391 es llamar getCurrentPosition antes del stream
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: distanciaMinimaMetros.toInt(),
-        intervalDuration: Duration(seconds: intervaloSegundos),
+        distanceFilter: 0,
+        intervalDuration: Duration(seconds: _intervaloSegundos),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationText: 'Rastreando ubicacion de entrega',
           notificationTitle: 'Agregados Zambrana - En ruta',
@@ -125,15 +145,17 @@ class GPSService {
     } else {
       locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: distanciaMinimaMetros.toInt(),
+        distanceFilter: 0,
       );
     }
 
+    await _positionSubscription?.cancel();
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,
     ).listen(
       (Position position) {
         _lastPosition = position;
+        _resetWatchdog();
 
         final posicionActual = PosicionActual(
           latitud: position.latitude,
@@ -144,20 +166,34 @@ class GPSService {
           timestamp: position.timestamp.toIso8601String(),
         );
 
-        onPosicion(posicionActual);
+        _onPosicionCallback?.call(posicionActual);
       },
       onError: (error) {
-        onError?.call('Error de GPS: $error');
+        _onErrorCallback?.call('Error de GPS: $error');
       },
     );
 
-    return true;
+    _resetWatchdog();
+  }
+
+  // Watchdog: si no llega posicion en 3x el intervalo, recrear el stream
+  void _resetWatchdog() {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = Timer(Duration(seconds: _intervaloSegundos * 3), () async {
+      if (_positionSubscription == null) return;
+      _onErrorCallback?.call('GPS stream inactivo, reconectando...');
+      await _crearStream();
+    });
   }
 
   // Detiene el tracking continuo
   Future<void> detenerTracking() async {
+    _watchdogTimer?.cancel();
+    _watchdogTimer = null;
     await _positionSubscription?.cancel();
     _positionSubscription = null;
+    _onPosicionCallback = null;
+    _onErrorCallback = null;
   }
 
   // Verifica si el tracking esta activo

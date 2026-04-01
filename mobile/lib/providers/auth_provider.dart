@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
+import '../main.dart' show navigatorKey;
+import '../screens/login_screen.dart';
 
 // Estado de autenticacion
 class AuthState {
@@ -35,12 +39,30 @@ class AuthState {
 // Notifier de autenticacion (Riverpod 3.x)
 class AuthNotifier extends Notifier<AuthState> {
   final AuthService _authService = AuthService();
+  final ApiService _apiService = ApiService();
 
   @override
   AuthState build() {
+    // Registrar callback de sesion expirada
+    _apiService.setSessionExpiredCallback(_handleSessionExpired);
     // Verificar sesion guardada al iniciar
     _checkStoredSession();
     return AuthState(isLoading: true);
+  }
+
+  // Manejar sesion expirada desde el interceptor
+  void _handleSessionExpired() {
+    _authService.logout();
+    state = AuthState(error: 'Tu sesion ha expirado. Inicia sesion nuevamente.');
+
+    // Limpiar toda la pila de navegacion y mostrar login
+    final nav = navigatorKey.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   // Verificar sesion guardada

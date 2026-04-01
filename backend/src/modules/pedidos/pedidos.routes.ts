@@ -630,7 +630,7 @@ const pedidosRoutes: FastifyPluginAsyncZod = async (fastify) => {
           interseccion_destino: {
             id: rutaCompleta.interseccion_destino.id,
             nombre: rutaCompleta.interseccion_destino.nombre,
-            distancia_metros: rutaCompleta.interseccion_destino.distancia_metros
+            distancia_metros: rutaCompleta.distancia_cliente_interseccion * 1000
           },
           distancia_total_km: rutaCompleta.distancia_total_km,
           tiempo_estimado_minutos: Math.round(rutaCompleta.tiempo_estimado_minutos)

@@ -1,9 +1,4 @@
-import {
-  encontrarInterseccionCercana,
-  calcularRutaOptima,
-  InterseccionCercana,
-  RutaCalculada
-} from '../../database/neo4j/queries.js';
+import type { RutaCalculada, NodoRuta, SegmentoRuta } from '../../database/neo4j/queries.js';
 import { pool } from '../../database/postgres/pool.js';
 
 /**
@@ -11,7 +6,12 @@ import { pool } from '../../database/postgres/pool.js';
  */
 export interface RutaCompleta {
   ruta_calculada: RutaCalculada;
-  interseccion_destino: InterseccionCercana;
+  interseccion_destino: {
+    id: string;
+    nombre: string;
+    latitud: number;
+    longitud: number;
+  };
   distancia_cliente_interseccion: number;
   distancia_total_km: number;
   tiempo_estimado_minutos: number;
@@ -24,8 +24,10 @@ export interface RutaCompleta {
   };
 }
 
-const PLANTA_ID = 'PLANTA_AGREGADOS_ZAMBRANA';
+const OSRM_URL = 'http://localhost:5000';
 const VELOCIDAD_PROMEDIO_KMH = 40;
+const PLANTA_LAT = -17.38375972482226;
+const PLANTA_LON = -66.15733157342568;
 
 /**
  * Calcula la ruta completa desde la planta hasta la ubicacion de entrega de un pedido
@@ -65,54 +67,74 @@ export async function calcularRutaHastaPedido(pedido_id: number): Promise<RutaCo
   const latitud = parseFloat(pedido.latitud_entrega);
   const longitud = parseFloat(pedido.longitud_entrega);
 
-  // PASO 2: Encontrar interseccion mas cercana a la ubicacion de entrega en Neo4j
-  const interseccionDestino = await encontrarInterseccionCercana(
-    latitud,
-    longitud
-  );
+  // PASO 2: Calcular ruta usando OSRM (respeta sentidos, geometria real de calles)
+  // OSRM usa formato longitud,latitud (inverso a lat,lon)
+  const osrmUrl = `${OSRM_URL}/route/v1/driving/${PLANTA_LON},${PLANTA_LAT};${longitud},${latitud}?overview=full&geometries=geojson&steps=true`;
 
-  if (!interseccionDestino) {
-    throw new Error(
-      `No se encontro ninguna interseccion cercana a la direccion: ${pedido.direccion_entrega}. ` +
-      `Verifica que el grafo Neo4j este sincronizado.`
-    );
+  const osrmResponse = await fetch(osrmUrl);
+
+  if (!osrmResponse.ok) {
+    throw new Error(`Error al calcular ruta con OSRM: ${osrmResponse.statusText}`);
   }
 
-  // PASO 3: Calcular ruta desde planta a interseccion en Neo4j
-  const rutaCalculada = await calcularRutaOptima(
-    PLANTA_ID,
-    interseccionDestino.id
-  );
+  const osrmData = await osrmResponse.json() as any;
 
-  if (!rutaCalculada) {
-    throw new Error(
-      `No se encontro ruta desde la planta hasta ${interseccionDestino.nombre}. ` +
-      `Verifica que el grafo Neo4j este conectado correctamente.`
-    );
+  if (osrmData.code !== 'Ok' || !osrmData.routes || osrmData.routes.length === 0) {
+    throw new Error(`OSRM no encontro ruta hacia: ${pedido.direccion_entrega}`);
   }
 
-  // PASO 4: Calcular distancia desde interseccion hasta el destino final
-  // Usamos formula de Haversine para distancia entre dos puntos GPS
-  const distanciaInterseccionDestino = calcularDistanciaHaversine(
-    interseccionDestino.latitud,
-    interseccionDestino.longitud,
-    latitud,
-    longitud
-  );
+  const route = osrmData.routes[0];
+  const coordinates = route.geometry.coordinates as [number, number][];
 
-  // PASO 5: Sumar distancias totales y calcular tiempo estimado
-  const distanciaTotal = rutaCalculada.distancia_total_km + distanciaInterseccionDestino;
+  // PASO 3: Convertir respuesta OSRM a estructura RutaCalculada compatible
+  // OSRM devuelve [longitud, latitud], convertimos a nuestro formato
+  const nodos: NodoRuta[] = coordinates.map((coord, index) => ({
+    id: `OSRM_${index}`,
+    nombre: index === 0 ? 'Planta Agregados Zambrana' : index === coordinates.length - 1 ? 'Destino' : `Punto ${index}`,
+    tipo: index === 0 ? 'planta' : index === coordinates.length - 1 ? 'cliente' : 'interseccion',
+    latitud: coord[1],
+    longitud: coord[0]
+  }));
 
-  // Tiempo: usar tiempo_total_minutos de Neo4j + tiempo adicional al destino final
-  const tiempoAdicionalMinutos = (distanciaInterseccionDestino / VELOCIDAD_PROMEDIO_KMH) * 60;
-  const tiempoTotal = rutaCalculada.tiempo_total_minutos + tiempoAdicionalMinutos;
+  // Construir segmentos entre nodos consecutivos
+  const segmentos: SegmentoRuta[] = [];
+  for (let i = 0; i < nodos.length - 1; i++) {
+    const nodoA = nodos[i]!;
+    const nodoB = nodos[i + 1]!;
+    const distKm = calcularDistanciaHaversine(
+      nodoA.latitud, nodoA.longitud,
+      nodoB.latitud, nodoB.longitud
+    );
+    segmentos.push({
+      origen: nodoA.id,
+      destino: nodoB.id,
+      distancia_km: distKm,
+      tiempo_minutos: (distKm / VELOCIDAD_PROMEDIO_KMH) * 60
+    });
+  }
+
+  // OSRM devuelve distancia en metros y duracion en segundos
+  const distanciaTotalKm = route.distance / 1000;
+  const tiempoTotalMinutos = route.duration / 60;
+
+  const rutaCalculada: RutaCalculada = {
+    nodos,
+    segmentos,
+    distancia_total_km: distanciaTotalKm,
+    tiempo_total_minutos: tiempoTotalMinutos
+  };
 
   return {
     ruta_calculada: rutaCalculada,
-    interseccion_destino: interseccionDestino,
-    distancia_cliente_interseccion: distanciaInterseccionDestino,
-    distancia_total_km: distanciaTotal,
-    tiempo_estimado_minutos: tiempoTotal,
+    interseccion_destino: {
+      id: 'OSRM_DESTINO',
+      nombre: pedido.direccion_entrega,
+      latitud: latitud,
+      longitud: longitud
+    },
+    distancia_cliente_interseccion: 0,
+    distancia_total_km: distanciaTotalKm,
+    tiempo_estimado_minutos: tiempoTotalMinutos,
     cliente: {
       id: pedido.cliente_id,
       razon_social: pedido.razon_social,

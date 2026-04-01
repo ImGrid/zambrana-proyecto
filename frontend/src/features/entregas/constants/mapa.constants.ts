@@ -3,8 +3,8 @@
 // Coordenadas de Planta Agregados Zambrana
 // Estas coordenadas coinciden con las del backend Neo4j
 export const PLANTA_COORDENADAS = {
-  latitud: -17.386140315699063,
-  longitud: -66.19983962614776,
+  latitud: -17.38375972482226,
+  longitud: -66.15733157342568,
 } as const;
 
 // Configuración del mapa de Leaflet

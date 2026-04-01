@@ -563,12 +563,28 @@ export async function obtenerEntregasActivas() {
         estaDesviado = determinarSiDesviado(entrega, ultimaPosicion.latitud, ultimaPosicion.longitud);
       }
 
+      // Calcular ETA actualizado si hay posicion y destino
+      let etaActualizado = null;
+      if (ultimaPosicion && entrega.pedido?.latitud_entrega && entrega.pedido?.longitud_entrega) {
+        const tiempoRestante = rutasService.calcularTiempoEstimadoLlegada(
+          ultimaPosicion.latitud,
+          ultimaPosicion.longitud,
+          entrega.pedido.latitud_entrega,
+          entrega.pedido.longitud_entrega,
+          velocidadPromedio > 0 ? velocidadPromedio : 40
+        );
+
+        etaActualizado = new Date();
+        etaActualizado.setMinutes(etaActualizado.getMinutes() + Math.ceil(tiempoRestante));
+      }
+
       return {
         ...entrega,
         posicion_actual: ultimaPosicion,
         velocidad_promedio_kmh: velocidadPromedio,
         esta_detenido: estaDetenido,
-        esta_desviado: estaDesviado
+        esta_desviado: estaDesviado,
+        eta_actualizado: etaActualizado
       };
     })
   );

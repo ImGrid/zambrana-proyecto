@@ -134,6 +134,7 @@ export interface EntregaActiva extends EntregaConDetalle {
   velocidad_promedio_kmh: number;
   esta_detenido: boolean;
   esta_desviado: boolean;
+  eta_actualizado: Date | null;
 }
 
 // PATCH /entregas/:id/finalizar - Respuesta al finalizar entrega
